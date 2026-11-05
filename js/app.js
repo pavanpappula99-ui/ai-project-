@@ -363,7 +363,9 @@ function bindEventListeners() {
   }
 
   // --- Modals ---
-  elements.openPhrasesBtn.addEventListener('click', openPhrasesModal);
+  if (elements.openPhrasesBtn) {
+    elements.openPhrasesBtn.addEventListener('click', openPhrasesModal);
+  }
   elements.closePhrasesBtn.addEventListener('click', closePhrasesModal);
   elements.openSettingsBtn.addEventListener('click', openSettingsModal);
   elements.closeSettingsBtn.addEventListener('click', closeSettingsModal);
