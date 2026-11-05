@@ -1,0 +1,6 @@
+# .gitignore for Bharat Translator
+cloudflared.exe
+PortableGit.exe
+PortableGit/
+debug_log.txt
+*.log

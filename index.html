@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FF9933" />
+  <meta name="description" content="Bharat Translator - Real-time two-way speech and text translator for all 22 scheduled Indian languages plus English." />
+  <title>Bharat Translator | भारत अनुवादक</title>
+
+  <!-- PWA Manifest & Favicon -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css?v=2.2.0" />
+</head>
+<body>
+  <!-- App Container -->
+  <div class="app-wrapper">
+
+    <!-- Browser Voice Optimization Notice -->
+    <div id="browserNoticeBanner" class="browser-notice-banner hidden">
+      <span>🎙️ <strong>Native Voice Mode:</strong> Google Chrome has full native speech recognition for Telugu, Hindi, Tamil & Indian languages.</span>
+      <button id="bannerOpenChromeBtn" class="banner-action-btn">Launch in Chrome</button>
+      <button id="closeBannerBtn" class="banner-close-btn" title="Dismiss">×</button>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 40 40" class="chakra-icon" width="34" height="34">
+            <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2.5" />
+            <circle cx="20" cy="20" r="4" fill="currentColor" />
+            <!-- Chakra 24 spokes -->
+            <g stroke="currentColor" stroke-width="1.2">
+              <line x1="20" y1="2" x2="20" y2="38" />
+              <line x1="2" y1="20" x2="38" y2="20" />
+              <line x1="7.27" y1="7.27" x2="32.73" y2="32.73" />
+              <line x1="7.27" y1="32.73" x2="32.73" y2="7.27" />
+              <line x1="10.86" y1="3.41" x2="29.14" y2="36.59" />
+              <line x1="3.41" y1="10.86" x2="36.59" y2="29.14" />
+              <line x1="3.41" y1="29.14" x2="36.59" y2="10.86" />
+              <line x1="10.86" y1="36.59" x2="29.14" y2="3.41" />
+            </g>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">Bharat <span class="highlight-saffron">Translator</span></h1>
+          <p class="brand-subtitle">Real-time Voice & Text for 23 Indian Languages</p>
+        </div>
+      </div>
+
+      <!-- Header Controls -->
+      <div class="header-actions">
+        <!-- Launch Google Chrome Pill Button -->
+        <button id="openChromeBtn" class="pill-btn chrome-pill" title="Launch in Google Chrome for Full Native Speech Recognition">
+          <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="4"></circle>
+            <line x1="21.17" y1="8" x2="12" y2="8"></line>
+            <line x1="3.95" y1="6.06" x2="8.54" y2="14"></line>
+            <line x1="10.88" y1="21.94" x2="15.46" y2="14"></line>
+          </svg>
+          <span class="pill-label">Open in Chrome</span>
+        </button>
+
+        <!-- Conversation Mode Pill Button -->
+        <button id="toggleConvModeBtn" class="pill-btn mode-pill" aria-pressed="false" title="Toggle Two-Way Conversation Mode">
+          <span class="pill-dot"></span>
+          <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="pill-label">Conversation Mode</span>
+        </button>
+
+        <!-- Saved Phrases Drawer Trigger -->
+        <button id="openPhrasesBtn" class="icon-btn" title="Saved & Travel Phrases" aria-label="Travel Phrases">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            <path d="M12 6l1.5 3 3.5.5-2.5 2.5.5 3.5-3-1.5-3 1.5.5-3.5-2.5-2.5 3.5-.5z"></path>
+          </svg>
+        </button>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button id="themeToggleBtn" class="icon-btn" title="Toggle Theme" aria-label="Toggle Dark / Light Theme">
+          <svg class="theme-icon-dark" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg class="theme-icon-light" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <!-- Settings / Info Trigger -->
+        <button id="openSettingsBtn" class="icon-btn" title="Settings & Voice Diagnostics" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Toast / Notice Area -->
+    <div id="toastNotice" class="toast-notice" role="status" aria-live="polite"></div>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+
+      <!-- ============================================== -->
+      <!-- SECTION A: DUAL PANEL TRANSLATOR (SIDE-BY-SIDE) -->
+      <!-- ============================================== -->
+      <section id="dualPanelSection" class="dual-panel-container">
+        
+        <!-- LEFT PANEL: Speaking Language (My Mother Tongue) -->
+        <div class="translator-panel source-panel">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <span class="panel-badge saffron-badge">You Speak</span>
+              <label for="sourceLangSelect" class="panel-label">Speaking Language</label>
+            </div>
+            <div class="select-wrapper">
+              <select id="sourceLangSelect" class="lang-select" aria-label="Select Speaking Language">
+                <!-- Injected via config.js sorted A to Z -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Text Input Area -->
+          <div class="panel-body">
+            <textarea
+              id="sourceTextInput"
+              class="translator-textarea"
+              placeholder="Type in English letters (e.g. 'nuvvu', 'nenu', 'aap kaise ho') or native words, or tap microphone..."
+              rows="6"
+              aria-label="Original Text Input"
+            ></textarea>
+            
+            <!-- Phonetic / Slang Transliteration Preview Pill -->
+            <div id="sourceTranslitPreview" class="translit-preview-pill hidden">
+              <span class="translit-icon">🔤</span>
+              <span class="translit-label">Pure Script:</span>
+              <strong id="sourceTranslitText" class="translit-text"></strong>
+              <button id="useTranslitBtn" class="use-translit-btn" title="Replace English letters with pure script">Use</button>
+            </div>
+
+            <!-- Live Transcription Overlay / Status -->
+            <div id="sourceLiveStatus" class="live-status-pill hidden">
+              <span class="pulsing-mic-icon"></span>
+              <span id="sourceLiveText" class="live-text">Listening...</span>
+            </div>
+
+            <!-- Clear text button -->
+            <button id="clearSourceBtn" class="clear-btn hidden" title="Clear text" aria-label="Clear text">
+              &times;
+            </button>
+
+            <!-- Quick Slang Word Palette (English letters -> Native pure script) -->
+            <div class="slang-palette-bar">
+              <span class="palette-title">Slang Words:</span>
+              <div id="sourceSlangChips" class="slang-chips-scroll"></div>
+            </div>
+          </div>
+
+          <!-- Left Panel Footer Action Toolbar -->
+          <div class="panel-footer">
+            <div class="footer-left-tools">
+              <!-- Large Microphone Button -->
+              <button id="sourceMicBtn" class="action-btn mic-btn primary-mic" title="Speak in your language" aria-label="Voice Input">
+                <svg class="mic-svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                <span class="mic-btn-label">Speak</span>
+              </button>
+
+              <!-- Text-to-Speech Button -->
+              <button id="sourceTtsBtn" class="action-btn tts-btn" title="Listen to text" aria-label="Read Aloud">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="footer-right-tools">
+              <span id="sourceCharCount" class="char-counter">0 chars</span>
+              <!-- Translate Trigger (also auto-translates) -->
+              <button id="manualTranslateBtn" class="translate-btn" title="Translate now">
+                Translate
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SWAP BUTTON (Between panels) -->
+        <div class="swap-divider">
+          <button id="swapLanguagesBtn" class="swap-btn" title="Swap Speaking & Translated Languages (⇄)" aria-label="Swap Languages">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- RIGHT PANEL: Translated Language (Other Person's Language) -->
+        <div class="translator-panel target-panel">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <span class="panel-badge green-badge">Other Person</span>
+              <label for="targetLangSelect" class="panel-label">Translated Language</label>
+            </div>
+            <div class="select-wrapper">
+              <select id="targetLangSelect" class="lang-select" aria-label="Select Translated Language">
+                <!-- Injected via config.js sorted A to Z -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Translated Text Display Area -->
+          <div class="panel-body">
+            <div
+              id="targetTextOutput"
+              class="translator-textarea target-output"
+              tabindex="0"
+              role="region"
+              aria-label="Translated Output"
+            >
+              <span class="placeholder-text">Translation will appear here instantly...</span>
+            </div>
+
+            <!-- Translation in-progress loader -->
+            <div id="translatingLoader" class="translating-indicator hidden">
+              <div class="spinner"></div>
+              <span>Translating into native script...</span>
+            </div>
+          </div>
+
+          <!-- Right Panel Footer Action Toolbar -->
+          <div class="panel-footer">
+            <div class="footer-left-tools">
+              <!-- Text-to-Speech Playback for Translated Text -->
+              <button id="targetTtsBtn" class="action-btn tts-btn target-tts-btn" title="Listen to translated text" aria-label="Listen to Translated Speech">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <span class="tts-label">Listen</span>
+              </button>
+
+              <!-- Copy to Clipboard -->
+              <button id="copyTranslatedBtn" class="action-btn copy-btn" title="Copy translated text to clipboard" aria-label="Copy to Clipboard">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+
+              <!-- Star / Save Favorite -->
+              <button id="starFavoriteBtn" class="action-btn star-btn" title="Save to favorite phrases" aria-label="Save to Favorites">
+                <svg class="star-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </button>
+            </div>
+
+            <div class="footer-right-tools">
+              <span id="providerBadge" class="provider-badge">Ready</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SECTION B: CONVERSATION MODE (TWO-WAY TALKING) -->
+      <!-- ============================================== -->
+      <section id="conversationSection" class="conversation-container hidden">
+        
+        <!-- Conversation Control Bar -->
+        <div class="conv-header-bar">
+          <div class="conv-status-wrapper">
+            <span id="convStatusDot" class="status-dot"></span>
+            <span id="convStatusText" class="conv-status-text">Conversation Mode Active: Tap a mic to speak</span>
+          </div>
+          <div class="conv-actions-bar">
+            <button id="clearConvHistoryBtn" class="btn-text-sm" title="Clear conversation history">Clear Chat</button>
+            <button id="exitConvModeBtn" class="btn-secondary-sm" title="Return to dual panels">Exit Mode</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Chat-Style Dialogue History -->
+        <div id="convHistoryFeed" class="conv-history-feed" role="log" aria-live="polite">
+          <div class="empty-history-placeholder">
+            <div class="empty-icon">🗣️ ⇄ 👥</div>
+            <h3>Two-Way Face-to-Face Mode</h3>
+            <p>1. Tap your button below to speak in your language; the app translates and speaks it aloud for your partner.</p>
+            <p>2. Tap the partner button for them to reply; the app listens, translates, and speaks/shows it in your language.</p>
+          </div>
+        </div>
+
+        <!-- Live Transcribing Preview Banner in Conversation Mode -->
+        <div id="convLiveBanner" class="conv-live-banner hidden">
+          <span class="conv-speaker-tag" id="convLiveSpeakerTag">You</span>
+          <span class="conv-live-transcript" id="convLiveTranscript">Listening...</span>
+        </div>
+
+        <!-- Quick Slang Word Palette in Conversation Mode -->
+        <div class="conv-slang-bar">
+          <span class="conv-slang-label">Tap Slang Word:</span>
+          <div id="convSlangChips" class="slang-chips-scroll"></div>
+        </div>
+
+        <!-- Conversation Slang/Text Input Bar -->
+        <div class="conv-input-bar">
+          <input
+            type="text"
+            id="convTextInput"
+            class="conv-text-input"
+            placeholder="Type slang in English (e.g. 'nuvvu', 'nenu', 'aap kaise ho') or text..."
+            aria-label="Conversation message input"
+          />
+          <div class="conv-send-buttons">
+            <button id="convSendPerson1Btn" class="conv-send-btn send-you-btn" title="Send as You">
+              Send as <span id="convSendYouLabel">YOU</span>
+            </button>
+            <button id="convSendPerson2Btn" class="conv-send-btn send-partner-btn" title="Send as Partner">
+              Send as <span id="convSendPartnerLabel">PARTNER</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Large Dual Microphone Buttons (One per person) -->
+        <div class="conv-mic-dock">
+          <!-- Person 1 Mic: You (Speaking Language) -->
+          <button id="convPerson1MicBtn" class="conv-speaker-btn person1-speaker-btn">
+            <div class="conv-btn-content">
+              <div class="mic-circle-icon">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </div>
+              <div class="conv-btn-text">
+                <span class="conv-speaker-label">YOU</span>
+                <span id="convPerson1LangName" class="conv-lang-name">Hindi - हिन्दी</span>
+              </div>
+            </div>
+            <div class="pulse-ring"></div>
+          </button>
+
+          <!-- Middle indicator / Auto-Detect badge -->
+          <div class="conv-mic-divider">
+            <span class="vs-badge">⇄</span>
+          </div>
+
+          <!-- Person 2 Mic: Partner (Translated Language) -->
+          <button id="convPerson2MicBtn" class="conv-speaker-btn person2-speaker-btn">
+            <div class="conv-btn-content">
+              <div class="mic-circle-icon">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </div>
+              <div class="conv-btn-text">
+                <span class="conv-speaker-label">PARTNER</span>
+                <span id="convPerson2LangName" class="conv-lang-name">Tamil - தமிழ்</span>
+              </div>
+            </div>
+            <div class="pulse-ring"></div>
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ============================================== -->
+    <!-- MODAL 1: SAVED & TRAVEL PHRASES DRAWER         -->
+    <!-- ============================================== -->
+    <div id="phrasesModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="phrasesModalTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h2 id="phrasesModalTitle" class="modal-title">Essential Travel & Saved Phrases</h2>
+            <p class="modal-subtitle">Quick phrases for instant face-to-face communication across India</p>
+          </div>
+          <button id="closePhrasesBtn" class="modal-close-btn" aria-label="Close Modal">&times;</button>
+        </div>
+
+        <!-- Category Filter Tabs -->
+        <div class="modal-category-tabs" id="phraseCategoryTabs">
+          <button class="cat-tab active" data-category="all">All</button>
+          <button class="cat-tab" data-category="favorites">⭐ My Favorites</button>
+          <button class="cat-tab" data-category="essentials">Essentials</button>
+          <button class="cat-tab" data-category="travel">🧭 Travel</button>
+          <button class="cat-tab" data-category="food">🍲 Food</button>
+          <button class="cat-tab" data-category="shopping">🛍️ Shopping</button>
+          <button class="cat-tab" data-category="emergency">🚨 Emergency</button>
+          <button class="cat-tab" data-category="business">💼 Business</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="modal-search-wrapper">
+          <input type="text" id="phraseSearchInput" class="search-input" placeholder="Search phrase or English meaning..." />
+        </div>
+
+        <!-- Phrase List Container -->
+        <div id="phrasesListContainer" class="phrases-list-container">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL 2: SETTINGS & VOICE DIAGNOSTICS          -->
+    <!-- ============================================== -->
+    <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h2 id="settingsModalTitle" class="modal-title">Settings & System Status</h2>
+            <p class="modal-subtitle">Speech preferences, API configuration, and device voice support</p>
+          </div>
+          <button id="closeSettingsBtn" class="modal-close-btn" aria-label="Close Modal">&times;</button>
+        </div>
+
+        <div class="settings-body">
+          <!-- Voice Rate Control -->
+          <div class="setting-group">
+            <label for="speechRateRange" class="setting-label">
+              <span>Speech Speed Rate: <strong id="speechRateValue">0.95x</strong></span>
+              <span class="setting-help">Slightly slower pace improves clarity during face-to-face travel</span>
+            </label>
+            <input type="range" id="speechRateRange" min="0.6" max="1.4" step="0.05" value="0.95" class="range-slider" />
+          </div>
+
+          <!-- Auto-speak translation -->
+          <div class="setting-group checkbox-group">
+            <label class="switch-container">
+              <input type="checkbox" id="autoSpeakCheckbox" checked />
+              <span class="switch-slider"></span>
+            </label>
+            <div class="switch-info">
+              <span class="switch-title">Auto-speak Translation in Conversation Mode</span>
+              <span class="switch-desc">Reads translated response aloud automatically when partner turns change</span>
+            </div>
+          </div>
+
+          <!-- Translation Providers & API Keys Info -->
+          <div class="setting-group info-box">
+            <h4>Backend & API Key Protection</h4>
+            <p>API keys are securely kept on the backend in <code>.env</code> and are never leaked to client browsers.</p>
+            <div class="api-status-list">
+              <div class="status-item"><span class="badge-status-dot green"></span> Govt of India Bhashini ULCA API Supported</div>
+              <div class="status-item"><span class="badge-status-dot green"></span> Google Cloud Translation API Supported</div>
+              <div class="status-item"><span class="badge-status-dot green"></span> Azure Translator & Gemini API Supported</div>
+              <div class="status-item"><span class="badge-status-dot blue"></span> Zero-config Free Cloud & Offline Dictionary Active</div>
+            </div>
+          </div>
+
+          <!-- Device Voice Diagnostics -->
+          <div class="setting-group">
+            <h4>Device Voices Diagnostic (Indian Languages)</h4>
+            <p class="text-sm">Voices installed locally in your browser's Web Speech engine:</p>
+            <div id="deviceVoicesDiagnostic" class="voice-diag-list">
+              <span class="loading-voices">Checking installed system voices...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <span>🇮🇳 <strong>Bharat Translator</strong> &bull; 22 Scheduled Indian Languages + English</span>
+        <span class="footer-subtext">PWA Ready &bull; Offline Phrasebook &bull; Privacy-First</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Main ES Module Script -->
+  <script type="module" src="js/app.js?v=2.2.0"></script>
+</body>
+</html>

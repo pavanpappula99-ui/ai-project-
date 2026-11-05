@@ -1,0 +1,20 @@
+{
+  "name": "Bharat Translator - भारत अनुवादक",
+  "short_name": "BharatTranslate",
+  "description": "Real-time two-way voice and text translator for all 22 scheduled Indian languages plus English.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0F17",
+  "theme_color": "#FF9933",
+  "categories": ["travel", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

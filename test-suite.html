@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bharat Translator - Automated Test Suite</title>
+</head>
+<body>
+  <div id="testOutput" style="font-family: monospace; padding: 20px;">Running tests...</div>
+
+  <script type="module">
+    import { LANGUAGES, getLanguage, getLanguageLabel } from './js/config.js';
+    import { PRESET_PHRASES, getOfflineTranslation } from './js/phrases.js';
+    import { speechEngine } from './js/speech.js';
+    import { translationEngine } from './js/translator.js';
+    import { storage } from './js/storage.js';
+
+    const results = [];
+    function assert(condition, message) {
+      if (!condition) {
+        results.push({ status: 'FAIL', message });
+        console.error('FAIL: ' + message);
+      } else {
+        results.push({ status: 'PASS', message });
+        console.log('PASS: ' + message);
+      }
+    }
+
+    async function runAllTests() {
+      console.log('--- STARTING BHARAT TRANSLATOR TEST SUITE ---');
+
+      // 1. Language Count & Alphabetical Order Check
+      assert(LANGUAGES.length === 23, `Total languages must be 23 (22 scheduled + English). Got: ${LANGUAGES.length}`);
+      
+      let isAlphabetical = true;
+      for (let i = 0; i < LANGUAGES.length - 1; i++) {
+        if (LANGUAGES[i].name.localeCompare(LANGUAGES[i + 1].name) > 0) {
+          isAlphabetical = false;
+          assert(false, `Order violation: ${LANGUAGES[i].name} should not precede ${LANGUAGES[i + 1].name}`);
+        }
+      }
+      assert(isAlphabetical, 'All 23 languages are strictly sorted alphabetically A to Z.');
+
+      // 2. Native script names check
+      const hindi = getLanguage('hi');
+      const punjabi = getLanguage('pa');
+      const tamil = getLanguage('ta');
+      const english = getLanguage('en');
+
+      assert(hindi && hindi.nativeName === 'हिन्दी', 'Hindi native name matches हिन्दी');
+      assert(punjabi && punjabi.nativeName === 'ਪੰਜਾਬੀ', 'Punjabi native name matches ਪੰਜਾਬੀ');
+      assert(tamil && tamil.nativeName === 'தமிழ்', 'Tamil native name matches தமிழ்');
+      assert(english && english.nativeName === 'English', 'English native name matches English');
+
+      // 3. Speech Codes check
+      assert(hindi.speechCode === 'hi-IN', 'Hindi speechCode is hi-IN');
+      assert(punjabi.speechCode === 'pa-IN', 'Punjabi speechCode is pa-IN');
+      assert(tamil.speechCode === 'ta-IN', 'Tamil speechCode is ta-IN');
+      assert(english.speechCode === 'en-IN', 'English speechCode is en-IN');
+
+      // 4. Offline Dictionary / Phrasebook Translations
+      const helloHiToEn = getOfflineTranslation('नमस्ते', 'hi', 'en');
+      assert(helloHiToEn && helloHiToEn.toLowerCase().includes('hello'), `Hindi 'नमस्ते' translates offline to English Hello. Got: ${helloHiToEn}`);
+
+      const helloEnToPa = getOfflineTranslation('Hello', 'en', 'pa');
+      assert(helloEnToPa && helloEnToPa.includes('ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ'), `English 'Hello' translates offline to Punjabi 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ'. Got: ${helloEnToPa}`);
+
+      const helloEnToTa = getOfflineTranslation('Hello', 'en', 'ta');
+      assert(helloEnToTa && helloEnToTa.includes('வணக்கம்'), `English 'Hello' translates offline to Tamil 'வணக்கம்'. Got: ${helloEnToTa}`);
+
+      const bathEnToHi = getOfflineTranslation('Where is the bathroom / washroom?', 'en', 'hi');
+      assert(bathEnToHi && bathEnToHi.includes('शौचालय कहां है'), `Bathroom phrase translates offline to Hindi 'शौचालय कहां है?'. Got: ${bathEnToHi}`);
+
+      const costEnToPa = getOfflineTranslation('How much does this cost?', 'en', 'pa');
+      assert(costEnToPa && costEnToPa.includes('ਕਿੰਨੀ ਹੈ'), `Cost phrase translates offline to Punjabi. Got: ${costEnToPa}`);
+
+      const costEnToTa = getOfflineTranslation('How much does this cost?', 'en', 'ta');
+      assert(costEnToTa && costEnToTa.includes('விலை என்ன'), `Cost phrase translates offline to Tamil 'இதன் விலை என்ன?'. Got: ${costEnToTa}`);
+
+      // 5. Translation Engine Fallback Execution
+      const testTranslation1 = await translationEngine.translate('Where is the bathroom / washroom?', 'en', 'ta');
+      assert(testTranslation1 && testTranslation1.translatedText.includes('கழிப்பறை'), `Translation Engine translates English to Tamil correctly: ${testTranslation1.translatedText}`);
+
+      const testTranslation2 = await translationEngine.translate('नमस्ते', 'hi', 'pa');
+      assert(testTranslation2 && testTranslation2.translatedText.includes('ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ'), `Translation Engine translates Hindi to Punjabi correctly: ${testTranslation2.translatedText}`);
+
+      // 6. Storage & Favorites
+      storage.saveFavorite({
+        originalText: 'Thank you very much',
+        translatedText: 'மிக்க நன்றி',
+        sourceLang: 'en',
+        targetLang: 'ta'
+      });
+      const isFav = storage.isFavorite('Thank you very much', 'en', 'ta');
+      assert(isFav, 'Phrase saved and confirmed in favorites storage.');
+
+      // 7. Conversation History
+      const histEntry = storage.addHistoryEntry({
+        speaker: 'person1',
+        originalText: 'नमस्ते',
+        translatedText: 'Hello / Greetings',
+        sourceLang: 'hi',
+        targetLang: 'en'
+      });
+      assert(histEntry && histEntry.speaker === 'person1', 'Conversation message added to history.');
+      const allHist = storage.getHistory();
+      assert(allHist.length > 0, `History contains entries: ${allHist.length}`);
+
+      // 8. Speech Synthesis Voice Matching & Fallbacks
+      const hiVoiceInfo = speechEngine.getBestVoice('hi');
+      assert(hiVoiceInfo !== null, 'Speech Engine provides voice resolver for Hindi');
+
+      const paVoiceInfo = speechEngine.getBestVoice('pa');
+      assert(paVoiceInfo !== null, 'Speech Engine provides voice resolver / fallback for Punjabi');
+
+      const taVoiceInfo = speechEngine.getBestVoice('ta');
+      assert(taVoiceInfo !== null, 'Speech Engine provides voice resolver / fallback for Tamil');
+
+      // Final summary
+      const passed = results.filter(r => r.status === 'PASS').length;
+      const failed = results.filter(r => r.status === 'FAIL').length;
+      const summary = `TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`;
+      console.log(summary);
+
+      window.testSummary = { passed, failed, results };
+      document.getElementById('testOutput').innerHTML = `
+        <h2>${summary}</h2>
+        <ul>
+          ${results.map(r => `<li style="color:${r.status === 'PASS' ? 'green' : 'red'}">${r.status}: ${r.message}</li>`).join('')}
+        </ul>
+      `;
+    }
+
+    runAllTests();
+  </script>
+</body>
+</html>

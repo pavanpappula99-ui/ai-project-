@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bharat Translator - UI Interaction Verification</title>
+</head>
+<body>
+  <!-- Embedded App Container iframe to test real index.html -->
+  <iframe id="appFrame" src="index.html" style="width: 1200px; height: 900px; border: 1px solid #ccc;"></iframe>
+  <div id="uiTestResults" style="padding: 20px; font-family: monospace;">Testing UI interactions...</div>
+
+  <script>
+    const tests = [];
+    function assert(cond, msg) {
+      if (!cond) {
+        tests.push({ status: 'FAIL', msg });
+        console.error('FAIL: ' + msg);
+      } else {
+        tests.push({ status: 'PASS', msg });
+        console.log('PASS: ' + msg);
+      }
+    }
+
+    const frame = document.getElementById('appFrame');
+    frame.onload = async () => {
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      const win = frame.contentWindow;
+
+      await new Promise(r => setTimeout(r, 600));
+
+      // 1. Verify Dropdowns Populated
+      const sourceSelect = doc.getElementById('sourceLangSelect');
+      const targetSelect = doc.getElementById('targetLangSelect');
+      assert(sourceSelect && sourceSelect.options.length === 23, `Source dropdown has 23 languages. Got: ${sourceSelect?.options?.length}`);
+      assert(targetSelect && targetSelect.options.length === 23, `Target dropdown has 23 languages. Got: ${targetSelect?.options?.length}`);
+
+      // Verify Hindi, Punjabi, Tamil, English exist in dropdowns
+      const optionTexts = Array.from(sourceSelect.options).map(o => o.text);
+      assert(optionTexts.some(t => t.includes('Hindi') && t.includes('हिन्दी')), 'Dropdown contains Hindi with native script');
+      assert(optionTexts.some(t => t.includes('Punjabi') && t.includes('ਪੰਜਾਬੀ')), 'Dropdown contains Punjabi with native script');
+      assert(optionTexts.some(t => t.includes('Tamil') && t.includes('தமிழ்')), 'Dropdown contains Tamil with native script');
+      assert(optionTexts.some(t => t.includes('English')), 'Dropdown contains English');
+
+      // 2. Test Typing in Source Panel
+      const sourceInput = doc.getElementById('sourceTextInput');
+      sourceInput.value = 'Where is the railway station or airport?';
+      sourceInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const charCount = doc.getElementById('sourceCharCount');
+      assert(charCount && charCount.textContent.includes('40 chars'), `Character counter updated to 40 chars. Got: ${charCount?.textContent}`);
+
+      // 3. Test Manual Translation Trigger
+      const translateBtn = doc.getElementById('manualTranslateBtn');
+      translateBtn.click();
+      await new Promise(r => setTimeout(r, 400));
+
+      const targetOutput = doc.getElementById('targetTextOutput');
+      assert(targetOutput && targetOutput.textContent.length > 0, `Translated text rendered: ${targetOutput?.textContent}`);
+
+      // 4. Test Swap Languages (⇄)
+      const swapBtn = doc.getElementById('swapLanguagesBtn');
+      const prevSource = sourceSelect.value;
+      const prevTarget = targetSelect.value;
+      swapBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+
+      assert(sourceSelect.value === prevTarget && targetSelect.value === prevSource, `Languages swapped successfully: ${sourceSelect.value} <-> ${targetSelect.value}`);
+
+      // 5. Test Conversation Mode Toggle
+      const convToggleBtn = doc.getElementById('toggleConvModeBtn');
+      const dualSection = doc.getElementById('dualPanelSection');
+      const convSection = doc.getElementById('conversationSection');
+
+      convToggleBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+
+      assert(dualSection.classList.contains('hidden'), 'Dual panel section hidden in conversation mode');
+      assert(!convSection.classList.contains('hidden'), 'Conversation section visible');
+      assert(convToggleBtn.classList.contains('active'), 'Conversation mode button active');
+
+      // Check Dual Microphone Buttons in Conversation Mode
+      const p1MicBtn = doc.getElementById('convPerson1MicBtn');
+      const p2MicBtn = doc.getElementById('convPerson2MicBtn');
+      assert(p1MicBtn && p2MicBtn, 'Dual microphones for Person 1 (You) and Person 2 (Partner) exist');
+
+      // Return to dual panels
+      const exitBtn = doc.getElementById('exitConvModeBtn');
+      exitBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+      assert(!dualSection.classList.contains('hidden'), 'Dual panel restored after exit');
+
+      // 6. Test Essential Phrases Modal
+      const openPhrasesBtn = doc.getElementById('openPhrasesBtn');
+      const phrasesModal = doc.getElementById('phrasesModal');
+      const closePhrasesBtn = doc.getElementById('closePhrasesBtn');
+
+      openPhrasesBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+      assert(!phrasesModal.classList.contains('hidden'), 'Phrases modal opened');
+
+      const phraseCards = doc.querySelectorAll('.phrase-card');
+      assert(phraseCards.length > 0, `Essential travel phrase cards loaded: ${phraseCards.length}`);
+
+      closePhrasesBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+      assert(phrasesModal.classList.contains('hidden'), 'Phrases modal closed');
+
+      // 7. Test Theme Toggle (Dark/Light)
+      const themeBtn = doc.getElementById('themeToggleBtn');
+      const htmlElem = doc.documentElement;
+      const initialTheme = htmlElem.getAttribute('data-theme');
+      themeBtn.click();
+      const newTheme = htmlElem.getAttribute('data-theme');
+      assert(newTheme !== initialTheme, `Theme toggled from ${initialTheme} to ${newTheme}`);
+
+      // 8. Test Settings Modal
+      const settingsBtn = doc.getElementById('openSettingsBtn');
+      const settingsModal = doc.getElementById('settingsModal');
+      const closeSettingsBtn = doc.getElementById('closeSettingsBtn');
+
+      settingsBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+      assert(!settingsModal.classList.contains('hidden'), 'Settings modal opened');
+
+      const speechSlider = doc.getElementById('speechRateRange');
+      assert(speechSlider !== null, 'Speech speed slider exists');
+      closeSettingsBtn.click();
+      await new Promise(r => setTimeout(r, 200));
+      assert(settingsModal.classList.contains('hidden'), 'Settings modal closed');
+
+      // Summary
+      const passed = tests.filter(t => t.status === 'PASS').length;
+      const failed = tests.filter(t => t.status === 'FAIL').length;
+      const summaryText = `UI TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`;
+      console.log(summaryText);
+
+      document.getElementById('uiTestResults').innerHTML = `
+        <h2>${summaryText}</h2>
+        <ul>
+          ${tests.map(t => `<li style="color:${t.status === 'PASS' ? 'green' : 'red'}">${t.status}: ${t.msg}</li>`).join('')}
+        </ul>
+      `;
+    };
+  </script>
+</body>
+</html>
