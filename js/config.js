@@ -14,6 +14,7 @@ export const LANGUAGES = [
     nativeName: 'অসমীয়া',
     speechCode: 'as-IN',
     itcCode: 'as-t-i0-und',
+    ocrCode: 'asm',
     fallbackSpeechCodes: ['bn-IN', 'hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -24,6 +25,7 @@ export const LANGUAGES = [
     nativeName: 'বাংলা',
     speechCode: 'bn-IN',
     itcCode: 'bn-t-i0-und',
+    ocrCode: 'ben',
     fallbackSpeechCodes: ['bn-BD', 'hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -34,6 +36,7 @@ export const LANGUAGES = [
     nativeName: 'बड़ो',
     speechCode: 'brx-IN',
     itcCode: 'hi-t-i0-und',
+    ocrCode: 'hin',
     fallbackSpeechCodes: ['hi-IN', 'as-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -44,6 +47,7 @@ export const LANGUAGES = [
     nativeName: 'डोगरी',
     speechCode: 'doi-IN',
     itcCode: 'hi-t-i0-und',
+    ocrCode: 'hin',
     fallbackSpeechCodes: ['hi-IN', 'pa-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -54,6 +58,7 @@ export const LANGUAGES = [
     nativeName: 'English',
     speechCode: 'en-IN',
     itcCode: null,
+    ocrCode: 'eng',
     fallbackSpeechCodes: ['en-US', 'en-GB'],
     direction: 'ltr'
   },
@@ -64,6 +69,7 @@ export const LANGUAGES = [
     nativeName: 'ગુજરાતી',
     speechCode: 'gu-IN',
     itcCode: 'gu-t-i0-und',
+    ocrCode: 'guj',
     fallbackSpeechCodes: ['hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -74,6 +80,7 @@ export const LANGUAGES = [
     nativeName: 'हिन्दी',
     speechCode: 'hi-IN',
     itcCode: 'hi-t-i0-und',
+    ocrCode: 'hin',
     fallbackSpeechCodes: ['en-IN'],
     direction: 'ltr'
   },
@@ -84,6 +91,7 @@ export const LANGUAGES = [
     nativeName: 'ಕನ್ನಡ',
     speechCode: 'kn-IN',
     itcCode: 'kn-t-i0-und',
+    ocrCode: 'kan',
     fallbackSpeechCodes: ['te-IN', 'ta-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -94,6 +102,7 @@ export const LANGUAGES = [
     nativeName: 'कॉशुर / کٲشُر',
     speechCode: 'ks-IN',
     itcCode: 'ur-t-i0-und',
+    ocrCode: 'urd',
     fallbackSpeechCodes: ['ur-IN', 'hi-IN', 'en-IN'],
     direction: 'rtl'
   },
@@ -104,6 +113,7 @@ export const LANGUAGES = [
     nativeName: 'कोंकणी',
     speechCode: 'kok-IN',
     itcCode: 'mr-t-i0-und',
+    ocrCode: 'mar',
     fallbackSpeechCodes: ['mr-IN', 'hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -114,6 +124,7 @@ export const LANGUAGES = [
     nativeName: 'मैथिली',
     speechCode: 'mai-IN',
     itcCode: 'hi-t-i0-und',
+    ocrCode: 'hin',
     fallbackSpeechCodes: ['hi-IN', 'bn-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -124,6 +135,7 @@ export const LANGUAGES = [
     nativeName: 'മലയാളം',
     speechCode: 'ml-IN',
     itcCode: 'ml-t-i0-und',
+    ocrCode: 'mal',
     fallbackSpeechCodes: ['ta-IN', 'kn-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -134,6 +146,7 @@ export const LANGUAGES = [
     nativeName: 'মৈতৈলোন্',
     speechCode: 'mni-IN',
     itcCode: 'bn-t-i0-und',
+    ocrCode: 'ben',
     fallbackSpeechCodes: ['bn-IN', 'as-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -144,6 +157,7 @@ export const LANGUAGES = [
     nativeName: 'मराठी',
     speechCode: 'mr-IN',
     itcCode: 'mr-t-i0-und',
+    ocrCode: 'mar',
     fallbackSpeechCodes: ['hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -154,6 +168,7 @@ export const LANGUAGES = [
     nativeName: 'नेपाली',
     speechCode: 'ne-NP',
     itcCode: 'ne-t-i0-und',
+    ocrCode: 'nep',
     fallbackSpeechCodes: ['ne-IN', 'hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -164,6 +179,7 @@ export const LANGUAGES = [
     nativeName: 'ଓଡ଼ିଆ',
     speechCode: 'or-IN',
     itcCode: 'or-t-i0-und',
+    ocrCode: 'ori',
     fallbackSpeechCodes: ['hi-IN', 'bn-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -174,6 +190,7 @@ export const LANGUAGES = [
     nativeName: 'ਪੰਜਾਬੀ',
     speechCode: 'pa-IN',
     itcCode: 'pa-t-i0-und',
+    ocrCode: 'pan',
     fallbackSpeechCodes: ['hi-IN', 'ur-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -184,6 +201,7 @@ export const LANGUAGES = [
     nativeName: 'संस्कृतम्',
     speechCode: 'sa-IN',
     itcCode: 'sa-t-i0-und',
+    ocrCode: 'san',
     fallbackSpeechCodes: ['hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -194,6 +212,7 @@ export const LANGUAGES = [
     nativeName: 'ᱥᱟᱱᱛᱟᱲᱤ',
     speechCode: 'sat-IN',
     itcCode: 'hi-t-i0-und',
+    ocrCode: 'hin',
     fallbackSpeechCodes: ['hi-IN', 'bn-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -204,6 +223,7 @@ export const LANGUAGES = [
     nativeName: 'سنڌي / सिंधी',
     speechCode: 'sd-IN',
     itcCode: 'sd-t-i0-und',
+    ocrCode: 'snd',
     fallbackSpeechCodes: ['ur-IN', 'hi-IN', 'en-IN'],
     direction: 'rtl'
   },
@@ -214,6 +234,7 @@ export const LANGUAGES = [
     nativeName: 'தமிழ்',
     speechCode: 'ta-IN',
     itcCode: 'ta-t-i0-und',
+    ocrCode: 'tam',
     fallbackSpeechCodes: ['ta-LK', 'te-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -224,6 +245,7 @@ export const LANGUAGES = [
     nativeName: 'తెలుగు',
     speechCode: 'te-IN',
     itcCode: 'te-t-i0-und',
+    ocrCode: 'tel',
     fallbackSpeechCodes: ['kn-IN', 'ta-IN', 'hi-IN', 'en-IN'],
     direction: 'ltr'
   },
@@ -234,6 +256,7 @@ export const LANGUAGES = [
     nativeName: 'اردو',
     speechCode: 'ur-IN',
     itcCode: 'ur-t-i0-und',
+    ocrCode: 'urd',
     fallbackSpeechCodes: ['ur-PK', 'hi-IN', 'en-IN'],
     direction: 'rtl'
   }
@@ -253,6 +276,15 @@ export function getLanguage(codeOrId) {
       (l) => l.id === normalized || l.code === normalized || l.speechCode.toLowerCase() === normalized
     ) || LANGUAGES[4] // defaults to English
   );
+}
+
+// Get OCR language code for Tesseract.js (supports multi-lang e.g. "eng+hin", "tel+eng")
+export function getOcrCode(langId) {
+  const lang = getLanguage(langId);
+  if (!lang || !lang.ocrCode) return 'eng+hin';
+  if (lang.ocrCode === 'eng') return 'eng';
+  // Include English alongside regional language for optimal detection of numbers, code, and mixed signage
+  return `${lang.ocrCode}+eng`;
 }
 
 // Default pair: Telugu (Speaking) -> Hindi (Translated) or Hindi -> English

@@ -13,7 +13,12 @@
   <link rel="apple-touch-icon" href="icons/icon.svg" />
 
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="css/styles.css?v=2.2.1" />
+  <link rel="stylesheet" href="css/styles.css?v=2.3.0" />
+
+  <!-- Client-side Document & OCR Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <!-- App Container -->
@@ -103,6 +108,31 @@
       </div>
     </header>
 
+    <!-- Global Mode Navigation Tabs -->
+    <nav class="mode-navigation-bar" aria-label="Translator Modes">
+      <div class="mode-nav-container">
+        <button id="navTextVoiceBtn" class="mode-tab-btn active" data-mode="text-voice">
+          <span class="mode-tab-icon">📝</span>
+          <span class="mode-tab-label">Text & Voice</span>
+        </button>
+        <button id="navConversationBtn" class="mode-tab-btn" data-mode="conversation">
+          <span class="mode-tab-icon">🗣️</span>
+          <span class="mode-tab-label">Conversation</span>
+          <span class="mode-badge live">LIVE</span>
+        </button>
+        <button id="navImageTranslatorBtn" class="mode-tab-btn" data-mode="image">
+          <span class="mode-tab-icon">📷</span>
+          <span class="mode-tab-label">Image Translator</span>
+          <span class="mode-badge new">NEW</span>
+        </button>
+        <button id="navPdfTranslatorBtn" class="mode-tab-btn" data-mode="pdf">
+          <span class="mode-tab-icon">📄</span>
+          <span class="mode-tab-label">PDF Translator</span>
+          <span class="mode-badge new">NEW</span>
+        </button>
+      </div>
+    </nav>
+
     <!-- Global Toast / Notice Area -->
     <div id="toastNotice" class="toast-notice" role="status" aria-live="polite"></div>
 
@@ -161,6 +191,16 @@
             <div class="slang-palette-bar">
               <span class="palette-title">Slang Words:</span>
               <div id="sourceSlangChips" class="slang-chips-scroll"></div>
+            </div>
+
+            <!-- Quick Document & Image Shortcuts -->
+            <div class="source-quick-shortcuts">
+              <button type="button" id="quickImageTranslateBtn" class="shortcut-pill" title="Upload/scan image to translate">
+                📷 Translate Image
+              </button>
+              <button type="button" id="quickPdfTranslateBtn" class="shortcut-pill" title="Upload PDF document to translate">
+                📄 Translate PDF
+              </button>
             </div>
           </div>
 
@@ -381,6 +421,262 @@
 
       </section>
 
+      <!-- ============================================== -->
+      <!-- SECTION C: IMAGE TRANSLATOR                     -->
+      <!-- ============================================== -->
+      <section id="imageTranslatorSection" class="tool-section hidden">
+        <div class="tool-banner saffron-gradient">
+          <div class="tool-banner-icon">📷</div>
+          <div class="tool-banner-content">
+            <h2 class="tool-banner-title">Image &amp; Photo Translator</h2>
+            <p class="tool-banner-sub">Translate text from photos, signboards, menus, notices &amp; receipts into all 23 Indian languages</p>
+          </div>
+        </div>
+
+        <!-- Language Selection Bar -->
+        <div class="tool-lang-bar">
+          <div class="tool-select-wrapper">
+            <label for="imageSourceLangSelect" class="tool-select-label">Text in Image:</label>
+            <select id="imageSourceLangSelect" class="lang-select" aria-label="Image Source Language"></select>
+          </div>
+          <button id="imageSwapLangBtn" class="swap-btn" title="Swap languages (⇄)" aria-label="Swap languages">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+          </button>
+          <div class="tool-select-wrapper">
+            <label for="imageTargetLangSelect" class="tool-select-label">Translate into:</label>
+            <select id="imageTargetLangSelect" class="lang-select" aria-label="Image Target Language"></select>
+          </div>
+        </div>
+
+        <!-- Image Upload Dropzone -->
+        <div id="imageDropzone" class="upload-dropzone" tabindex="0" role="region" aria-label="Image Upload Area">
+          <input type="file" id="imageFileInput" accept="image/*" class="file-input-hidden" />
+          <input type="file" id="cameraFileInput" accept="image/*" capture="environment" class="file-input-hidden" />
+          
+          <div class="dropzone-body">
+            <div class="dropzone-hero-icon">📸</div>
+            <h3 class="dropzone-heading">Drop your image here or paste from clipboard (Ctrl + V)</h3>
+            <p class="dropzone-sub">Supports PNG, JPG, JPEG, WEBP, BMP, screenshot or camera snap</p>
+            
+            <div class="dropzone-btn-row">
+              <button type="button" id="browseImageBtn" class="btn-primary">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Browse Image
+              </button>
+              <button type="button" id="captureCameraBtn" class="btn-secondary">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                Take Photo
+              </button>
+            </div>
+
+            <!-- Instant Sample Images for Travelers -->
+            <div class="sample-chips-row">
+              <span class="sample-label">Try instant samples:</span>
+              <button type="button" class="sample-chip" data-sample="sign">🪧 Hindi Railway Board</button>
+              <button type="button" class="sample-chip" data-sample="menu">🍽️ Restaurant Menu</button>
+              <button type="button" class="sample-chip" data-sample="telugu">📜 Telugu Notice</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Animated Progress / Processing Card -->
+        <div id="imageProcessingCard" class="processing-card hidden">
+          <div class="processing-header">
+            <div class="processing-spinner"></div>
+            <div class="processing-labels">
+              <span id="imageProgressStatus" class="processing-status-text">Scanning image...</span>
+              <span id="imageProgressSub" class="processing-sub-text">Extracting text via client-side OCR</span>
+            </div>
+            <span id="imageProgressPercent" class="processing-badge">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="imageProgressBarFill" class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Side-by-Side Dual Results View -->
+        <div id="imageResultsContainer" class="tool-results-grid hidden">
+          <!-- Left: Image Preview & Extracted Text -->
+          <div class="tool-card original-card">
+            <div class="tool-card-header">
+              <span class="tool-card-title">Extracted from Image</span>
+              <span id="imageConfidenceBadge" class="tool-badge-info">Confidence: 96%</span>
+            </div>
+            <div class="image-preview-box">
+              <img id="imagePreviewImg" src="" alt="Uploaded image" class="image-thumb-display" />
+            </div>
+            <div class="extracted-editor-wrapper">
+              <label for="imageExtractedText" class="field-label">Extracted Text (editable):</label>
+              <textarea id="imageExtractedText" class="tool-textarea" rows="5" placeholder="Extracted text..."></textarea>
+            </div>
+            <div class="tool-card-footer">
+              <button id="retranslateImageBtn" class="btn-primary-sm" title="Re-translate with edits">Translate Edits</button>
+              <button id="copyExtractedImageBtn" class="btn-secondary-sm" title="Copy original text">Copy Original</button>
+            </div>
+          </div>
+
+          <!-- Right: Pure Native Script Translated Output -->
+          <div class="tool-card translated-card">
+            <div class="tool-card-header">
+              <span class="tool-card-title">Translated (<span id="imageTargetLangTitle">Hindi</span>)</span>
+              <span class="tool-badge-accent">Pure Native Script</span>
+            </div>
+            <div class="translated-output-box">
+              <div id="imageTranslatedOutput" class="tool-output-content" dir="auto" tabindex="0"></div>
+            </div>
+            <div class="tool-card-footer tool-action-toolbar">
+              <button id="imageListenBtn" class="btn-secondary-sm" title="Listen aloud in correct accent">🔊 Listen</button>
+              <button id="imageCopyBtn" class="btn-secondary-sm" title="Copy translated text">📋 Copy</button>
+              <button id="imageDownloadBtn" class="btn-secondary-sm" title="Download as text file">📥 Download</button>
+              <button id="imageSendToDualBtn" class="btn-secondary-sm" title="Send to text & voice panel">⇄ Send to Dual Panel</button>
+              <button id="imageNewBtn" class="btn-text-sm" title="Upload another image">🔄 New Image</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SECTION D: PDF DOCUMENT TRANSLATOR              -->
+      <!-- ============================================== -->
+      <section id="pdfTranslatorSection" class="tool-section hidden">
+        <div class="tool-banner emerald-gradient">
+          <div class="tool-banner-icon">📑</div>
+          <div class="tool-banner-content">
+            <h2 class="tool-banner-title">PDF Document Translator</h2>
+            <p class="tool-banner-sub">Translate entire PDF documents, guides, tickets &amp; books with page-by-page side-by-side view</p>
+          </div>
+        </div>
+
+        <!-- Language Selection Bar -->
+        <div class="tool-lang-bar">
+          <div class="tool-select-wrapper">
+            <label for="pdfSourceLangSelect" class="tool-select-label">Document Language:</label>
+            <select id="pdfSourceLangSelect" class="lang-select" aria-label="PDF Source Language"></select>
+          </div>
+          <button id="pdfSwapLangBtn" class="swap-btn" title="Swap languages (⇄)" aria-label="Swap languages">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+          </button>
+          <div class="tool-select-wrapper">
+            <label for="pdfTargetLangSelect" class="tool-select-label">Translate into:</label>
+            <select id="pdfTargetLangSelect" class="lang-select" aria-label="PDF Target Language"></select>
+          </div>
+        </div>
+
+        <!-- PDF Upload Dropzone -->
+        <div id="pdfDropzone" class="upload-dropzone" tabindex="0" role="region" aria-label="PDF Upload Area">
+          <input type="file" id="pdfFileInput" accept="application/pdf" class="file-input-hidden" />
+          
+          <div class="dropzone-body">
+            <div class="dropzone-hero-icon">📑</div>
+            <h3 class="dropzone-heading">Drop your PDF document here</h3>
+            <p class="dropzone-sub">Supports digital and scanned PDF files (e.g. travel tickets, guides, notices, menus)</p>
+            
+            <div class="dropzone-btn-row">
+              <button type="button" id="browsePdfBtn" class="btn-primary">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Select PDF File
+              </button>
+            </div>
+
+            <!-- Instant Sample PDFs for Travelers -->
+            <div class="sample-chips-row">
+              <span class="sample-label">Try sample PDF:</span>
+              <button type="button" class="sample-chip" data-pdf-sample="ticket">🎫 Train Ticket &amp; Guidelines</button>
+              <button type="button" class="sample-chip" data-pdf-sample="tourism">🗺️ India Travel Itinerary</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDF Processing Progress Card -->
+        <div id="pdfProcessingCard" class="processing-card hidden">
+          <div class="pdf-info-row">
+            <span id="pdfFileName" class="pdf-file-title">document.pdf</span>
+            <span id="pdfFileMeta" class="pdf-file-details">0 Pages</span>
+          </div>
+          <div class="processing-header">
+            <div class="processing-spinner"></div>
+            <div class="processing-labels">
+              <span id="pdfProgressStatus" class="processing-status-text">Parsing PDF pages...</span>
+              <span id="pdfProgressSub" class="processing-sub-text">Extracting text &amp; preparing translation</span>
+            </div>
+            <span id="pdfProgressPercent" class="processing-badge">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="pdfProgressBarFill" class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- PDF Results View -->
+        <div id="pdfResultsContainer" class="pdf-results-container hidden">
+          <!-- Page Tabs & Export Action Toolbar -->
+          <div class="pdf-toolbar-card">
+            <div class="pdf-page-tabs-scroller">
+              <div id="pdfPageTabs" class="pdf-tabs-row">
+                <!-- Injected page buttons: [All Pages] [Page 1] [Page 2] ... -->
+              </div>
+            </div>
+            <div class="pdf-export-row">
+              <button id="pdfDownloadPdfBtn" class="btn-primary-sm" title="Download formatted translated PDF">
+                📥 Download PDF
+              </button>
+              <button id="pdfDownloadTxtBtn" class="btn-secondary-sm" title="Download text document">
+                📄 Download Text
+              </button>
+              <button id="pdfCopyAllBtn" class="btn-secondary-sm" title="Copy all pages">
+                📋 Copy All
+              </button>
+              <button id="pdfListenBtn" class="btn-secondary-sm" title="Read current page aloud">
+                🔊 Listen
+              </button>
+              <button id="pdfNewBtn" class="btn-text-sm" title="Translate another PDF">
+                🔄 New PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Side-by-Side Dual Comparison for PDF Pages -->
+          <div class="tool-results-grid">
+            <!-- Left: Original Page Content -->
+            <div class="tool-card original-card">
+              <div class="tool-card-header">
+                <span class="tool-card-title">Original PDF (<span id="pdfSourcePageTitle">Page 1</span>)</span>
+                <span id="pdfSourceCharBadge" class="tool-badge-info">0 chars</span>
+              </div>
+              <div class="pdf-content-display">
+                <div id="pdfOriginalContent" class="tool-output-content pdf-page-view" dir="auto" tabindex="0"></div>
+              </div>
+            </div>
+
+            <!-- Right: Translated Page Content in Pure Native Script -->
+            <div class="tool-card translated-card">
+              <div class="tool-card-header">
+                <span class="tool-card-title">Translated (<span id="pdfTargetPageTitle">Hindi</span>)</span>
+                <span class="tool-badge-accent">Pure Native Script</span>
+              </div>
+              <div class="pdf-content-display">
+                <div id="pdfTranslatedContent" class="tool-output-content pdf-page-view" dir="auto" tabindex="0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <!-- ============================================== -->
@@ -490,6 +786,6 @@
   </div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=2.2.1"></script>
+  <script type="module" src="js/app.js?v=2.3.0"></script>
 </body>
 </html>

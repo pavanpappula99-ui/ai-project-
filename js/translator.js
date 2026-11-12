@@ -238,6 +238,96 @@ class TranslationEngine {
     throw new Error('Unable to translate. Please check your internet connection.');
   }
 
+  /**
+   * Translate long multi-paragraph documents (PDFs, multi-line OCR text)
+   * Safely chunks text to avoid API size limits and reports progress.
+   * @param {string} text
+   * @param {string} sourceLang
+   * @param {string} targetLang
+   * @param {function} [onProgress] - callback(percent: number, current: number, total: number)
+   * @returns {Promise<{ translatedText: string, provider: string }>}
+   */
+  async translateLongText(text, sourceLang, targetLang, onProgress = null) {
+    if (!text || !text.trim()) {
+      return { translatedText: '', provider: 'none' };
+    }
+
+    if (sourceLang === targetLang) {
+      return { translatedText: text, provider: 'identity' };
+    }
+
+    const trimmed = text.trim();
+    // If under 750 characters, translate directly in one go
+    if (trimmed.length <= 750) {
+      if (onProgress) onProgress(50, 1, 1);
+      const res = await this.translate(trimmed, sourceLang, targetLang);
+      if (onProgress) onProgress(100, 1, 1);
+      return res;
+    }
+
+    // Split text into paragraphs
+    const paragraphs = trimmed.split(/\n+/);
+    const chunks = [];
+    let currentChunk = '';
+
+    for (const para of paragraphs) {
+      const p = para.trim();
+      if (!p) continue;
+
+      if ((currentChunk + '\n\n' + p).length <= 750) {
+        currentChunk = currentChunk ? currentChunk + '\n\n' + p : p;
+      } else {
+        if (currentChunk) chunks.push(currentChunk);
+        // If single paragraph is longer than 750 chars, split by sentences
+        if (p.length > 750) {
+          const sentences = p.split(/(?<=[.?!।\n])\s+/);
+          let sentChunk = '';
+          for (const s of sentences) {
+            if ((sentChunk + ' ' + s).length <= 750) {
+              sentChunk = sentChunk ? sentChunk + ' ' + s : s;
+            } else {
+              if (sentChunk) chunks.push(sentChunk);
+              sentChunk = s;
+            }
+          }
+          if (sentChunk) currentChunk = sentChunk;
+          else currentChunk = '';
+        } else {
+          currentChunk = p;
+        }
+      }
+    }
+    if (currentChunk) chunks.push(currentChunk);
+
+    if (chunks.length === 0) {
+      return { translatedText: '', provider: 'none' };
+    }
+
+    const translatedChunks = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      if (onProgress) {
+        const percent = Math.round(((i + 1) / chunks.length) * 100);
+        onProgress(percent, i + 1, chunks.length);
+      }
+      try {
+        const result = await this.translate(chunk, sourceLang, targetLang);
+        translatedChunks.push(result.translatedText || chunk);
+      } catch (err) {
+        console.warn(`Translation of chunk ${i + 1} failed:`, err.message);
+        translatedChunks.push(chunk);
+      }
+      if (chunks.length > 1) {
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    }
+
+    return {
+      translatedText: translatedChunks.join('\n\n'),
+      provider: 'chunked-translation'
+    };
+  }
+
   isIdentical(original, translated, sourceLang, targetLang) {
     if (sourceLang === targetLang) return false;
     const cleanOrig = original.trim().toLowerCase();
