@@ -200,13 +200,13 @@ class TranslationEngine {
           isOffline: true,
           toString() { return this.translatedText; }
         };
-        };
       }
       return {
         translatedText: targetLang === 'en' ? trimmed : sourceTransliterated,
         sourceTransliterated,
         provider: 'offline-untranslated',
-        isOffline: true
+        isOffline: true,
+        toString() { return this.translatedText; }
       };
     }
 
