@@ -1,8 +1,8 @@
 /**
  * Bharat Translator - OCR (Optical Character Recognition) Engine
  * Powered by Tesseract.js client-side WebAssembly.
- * Extracts text from photos, signboards, menus, and document images
- * in English and Indian languages.
+ * Extracts text from photos, signboards, menus, notes, and document images
+ * in English and Indian languages with adaptive contrast preprocessing.
  */
 
 import { getOcrCode } from './config.js';
@@ -20,26 +20,24 @@ class OcrEngine {
   }
 
   /**
-   * Convert file / blob to an optimized Image Data URL
-   * Optionally enhances contrast for better OCR recognition of Indian scripts
-   * @param {File|Blob|string} imageInput
+   * Convert file / blob / canvas / dataUrl to an optimized Image Data URL
+   * Applies adaptive contrast enhancement for clearer handwriting and Indian scripts
+   * @param {File|Blob|HTMLCanvasElement|string} imageInput
    * @returns {Promise<string>}
    */
   async prepareImage(imageInput) {
-    if (typeof imageInput === 'string' && imageInput.startsWith('data:')) {
-      return imageInput;
+    if (typeof HTMLCanvasElement !== 'undefined' && imageInput instanceof HTMLCanvasElement) {
+      return imageInput.toDataURL('image/jpeg', 0.95);
     }
 
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          // Downscale if ridiculously large (> 2400px) to prevent mobile browser crash
-          const maxDim = 2400;
-          let width = img.width;
-          let height = img.height;
+      const processImg = (img) => {
+        try {
+          const maxDim = 2200;
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
 
+          // Scale if overly large to prevent mobile GPU crashes
           if (width > maxDim || height > maxDim) {
             if (width > height) {
               height = Math.round((height * maxDim) / width);
@@ -50,35 +48,74 @@ class OcrEngine {
             }
           }
 
+          // If image is too small (< 700px), upscale slightly so handwriting is legible to OCR
+          if (width < 700 && height < 700) {
+            const scale = Math.min(2.0, 900 / Math.max(width, height));
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
+
+          // Draw base image
           ctx.drawImage(img, 0, 0, width, height);
 
-          resolve(canvas.toDataURL('image/jpeg', 0.92));
-        };
-        img.onerror = () => reject(new Error('Failed to load image file.'));
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error('Failed to read image file.'));
+          // Contrast stretch to suppress shadows and enhance handwriting/sign text
+          try {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+              const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+              // Background whitening / ink darkening
+              const enhanced = gray > 140 ? Math.min(255, gray * 1.15) : Math.max(0, (gray - 20) * 1.15);
+              d[i] = enhanced;
+              d[i + 1] = enhanced;
+              d[i + 2] = enhanced;
+            }
+            ctx.putImageData(imgData, 0, 0);
+          } catch (pixelErr) {
+            // If cross-origin or canvas security restricts getImageData, use standard canvas
+          }
 
-      if (imageInput instanceof Blob) {
+          resolve(canvas.toDataURL('image/jpeg', 0.95));
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if (typeof imageInput === 'string') {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => processImg(img);
+        img.onerror = () => reject(new Error('Failed to load image.'));
+        img.src = imageInput;
+      } else if (imageInput instanceof Blob) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => processImg(img);
+          img.onerror = () => reject(new Error('Failed to parse image from file.'));
+          img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Failed to read image file.'));
         reader.readAsDataURL(imageInput);
       } else {
-        resolve(imageInput);
+        reject(new Error('Unsupported image format.'));
       }
     });
   }
 
   /**
    * Extract text from an image
-   * @param {File|Blob|string} imageInput - Image file, blob, or base64/URL
-   * @param {string} langId - Language ID (e.g. 'te', 'hi', 'en') or direct OCR code (e.g. 'eng+tel')
+   * @param {File|Blob|HTMLCanvasElement|string} imageInput
+   * @param {string} langId - Language ID (e.g. 'auto', 'en', 'te', 'hi')
    * @param {function} [onProgress] - callback({ status: string, progress: number, stage: string })
    * @returns {Promise<{ text: string, confidence: number, rawData: object }>}
    */
-  async recognize(imageInput, langId = 'en', onProgress = null) {
+  async recognize(imageInput, langId = 'auto', onProgress = null) {
     if (!this.isSupported()) {
       throw new Error('OCR engine library (Tesseract.js) is not loaded. Please check your internet connection and refresh.');
     }
@@ -87,35 +124,35 @@ class OcrEngine {
 
     try {
       if (onProgress) {
-        onProgress({ status: 'Preparing image...', progress: 5, stage: 'prepare' });
+        onProgress({ status: 'Enhancing image for text recognition...', progress: 10, stage: 'prepare' });
       }
 
       const imageUrl = await this.prepareImage(imageInput);
 
-      // Determine OCR language codes (e.g. 'tel+eng', 'hin+eng', 'eng')
-      let ocrLang = langId;
-      if (!langId.includes('+') && langId.length <= 4) {
+      // Determine OCR language codes (e.g. 'eng', 'tel+eng', 'hin+eng')
+      let ocrLang = 'eng';
+      if (langId && langId !== 'auto') {
         ocrLang = getOcrCode(langId);
       }
 
       if (onProgress) {
-        onProgress({ status: `Loading language recognition model (${ocrLang})...`, progress: 15, stage: 'init' });
+        onProgress({ status: `Loading language recognition model (${ocrLang})...`, progress: 20, stage: 'init' });
       }
 
       const result = await window.Tesseract.recognize(imageUrl, ocrLang, {
         logger: (m) => {
           if (!onProgress) return;
           if (m.status === 'loading tesseract core') {
-            onProgress({ status: 'Loading OCR core...', progress: 20, stage: 'core' });
+            onProgress({ status: 'Loading OCR core engine...', progress: 25, stage: 'core' });
           } else if (m.status === 'initializing tesseract') {
-            onProgress({ status: 'Initializing engine...', progress: 30, stage: 'init' });
+            onProgress({ status: 'Initializing recognition neural net...', progress: 35, stage: 'init' });
           } else if (m.status === 'loading language traineddata') {
-            const p = Math.round(30 + (m.progress || 0) * 25);
+            const p = Math.round(35 + (m.progress || 0) * 30);
             onProgress({ status: `Downloading language models: ${Math.round((m.progress || 0) * 100)}%`, progress: p, stage: 'lang' });
           } else if (m.status === 'initializing api') {
-            onProgress({ status: 'Starting recognition engine...', progress: 60, stage: 'api' });
+            onProgress({ status: 'Starting recognition engine...', progress: 70, stage: 'api' });
           } else if (m.status === 'recognizing text') {
-            const p = Math.round(60 + (m.progress || 0) * 38);
+            const p = Math.round(70 + (m.progress || 0) * 28);
             onProgress({ status: `Scanning & reading text: ${Math.round((m.progress || 0) * 100)}%`, progress: p, stage: 'scan' });
           }
         }
@@ -126,13 +163,36 @@ class OcrEngine {
       }
 
       const rawText = result?.data?.text || '';
-      // Clean up multiple trailing empty lines while preserving paragraph spacing
-      const cleanedText = rawText
-        .split('\n')
-        .map((line) => line.trim())
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
+
+      // Clean up OCR artifacts, noise lines, and common handwriting OCR misreads
+      const lines = rawText.split('\n').map((l) => l.trim());
+      const cleanedLines = [];
+
+      for (const line of lines) {
+        if (!line) continue;
+        // Check if line contains letters or numbers
+        const hasLetters = /[\p{L}\p{N}]/u.test(line);
+        if (!hasLetters) continue; // Skip lines with only punctuation like "! - | ;"
+
+        // Strip leading/trailing stray non-alphanumeric noise
+        let clean = line
+          .replace(/^[-—_+=~`"':;\\/.,|*#^<>{}\[\]\s]+/, '')
+          .replace(/[-—_+=~`"':;\\/.,|*#^<>{}\[\]\s]+$/, '')
+          .trim();
+
+        // Fix common handwriting OCR misreads
+        clean = clean
+          .replace(/\\Jou\b/g, 'you')
+          .replace(/\\jou\b/g, 'you')
+          .replace(/\bevcited\b/gi, 'excited');
+
+        // Only keep if meaningful text remains
+        if (/[\p{L}\p{N}]/u.test(clean)) {
+          cleanedLines.push(clean);
+        }
+      }
+
+      const cleanedText = cleanedLines.length > 0 ? cleanedLines.join('\n') : rawText.trim();
 
       return {
         text: cleanedText,

@@ -191,6 +191,9 @@ class PdfHelper {
         translatedPages.forEach((pageObj, index) => {
           if (index > 0) doc.addPage();
 
+          const rawText = pageObj.translatedText || pageObj.text || '';
+          const pageStr = typeof rawText === 'string' ? rawText : (rawText?.translatedText || String(rawText));
+
           // Header
           doc.setFontSize(10);
           doc.setTextColor(120, 120, 120);
@@ -206,7 +209,7 @@ class PdfHelper {
           // Content
           doc.setFontSize(11);
           doc.setTextColor(51, 65, 85);
-          const splitLines = doc.splitTextToSize(pageObj.text || '', maxLineWidth);
+          const splitLines = doc.splitTextToSize(pageStr, maxLineWidth);
           
           let y = 30;
           const lineHeight = 6;
@@ -239,7 +242,11 @@ class PdfHelper {
 
     // Fallback: If jsPDF font rendering has script limitations, download UTF-8 text file and trigger print view
     const combinedText = translatedPages
-      .map((p) => `==================== PAGE ${p.pageNum} (${targetLangName}) ====================\n\n${p.text}`)
+      .map((p) => {
+        const raw = p.translatedText || p.text || '';
+        const s = typeof raw === 'string' ? raw : (raw?.translatedText || String(raw));
+        return `==================== PAGE ${p.pageNum} (${targetLangName}) ====================\n\n${s}`;
+      })
       .join('\n\n\n');
     this.downloadTextFile(combinedText, `${baseName}_${targetLangName}_translated.txt`);
     return false;

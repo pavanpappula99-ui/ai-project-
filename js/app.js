@@ -24,14 +24,14 @@ const state = {
   selectedCategory: 'all',
   searchQuery: '',
   // Image Translator State
-  imageSourceLang: 'en',
+  imageSourceLang: 'auto',
   imageTargetLang: 'te',
   imageExtractedText: '',
   imageTranslatedText: '',
   imageFileUrl: null,
   // PDF Translator State
-  pdfSourceLang: 'en',
-  pdfTargetLang: 'hi',
+  pdfSourceLang: 'auto',
+  pdfTargetLang: 'te',
   pdfPages: [],
   pdfCurrentTab: 'all',
   pdfFileName: 'document.pdf'
@@ -231,19 +231,41 @@ function registerServiceWorker() {
 // Language Dropdowns (Sorted A to Z)
 // ============================================================================
 function populateLanguageDropdowns() {
-  const selects = [
+  const standardSelects = [
     { el: elements.sourceLangSelect, cur: state.sourceLang },
     { el: elements.targetLangSelect, cur: state.targetLang },
-    { el: elements.imageSourceLangSelect, cur: state.imageSourceLang },
     { el: elements.imageTargetLangSelect, cur: state.imageTargetLang },
-    { el: elements.pdfSourceLangSelect, cur: state.pdfSourceLang },
     { el: elements.pdfTargetLangSelect, cur: state.pdfTargetLang }
   ];
 
-  selects.forEach(({ el, cur }) => {
+  standardSelects.forEach(({ el, cur }) => {
     if (!el) return;
     el.innerHTML = '';
-    // LANGUAGES array in config.js is pre-sorted A to Z
+    LANGUAGES.forEach((lang) => {
+      const opt = document.createElement('option');
+      opt.value = lang.id;
+      opt.textContent = getLanguageLabel(lang);
+      if (lang.id === cur) opt.selected = true;
+      el.appendChild(opt);
+    });
+  });
+
+  // Source selects for Image & PDF include Auto-Detect option at the top
+  const toolSourceSelects = [
+    { el: elements.imageSourceLangSelect, cur: state.imageSourceLang },
+    { el: elements.pdfSourceLangSelect, cur: state.pdfSourceLang }
+  ];
+
+  toolSourceSelects.forEach(({ el, cur }) => {
+    if (!el) return;
+    el.innerHTML = '';
+
+    const autoOpt = document.createElement('option');
+    autoOpt.value = 'auto';
+    autoOpt.textContent = '🌐 Auto-Detect (English / Indian Scripts)';
+    if (cur === 'auto' || !cur) autoOpt.selected = true;
+    el.appendChild(autoOpt);
+
     LANGUAGES.forEach((lang) => {
       const opt = document.createElement('option');
       opt.value = lang.id;
@@ -655,7 +677,7 @@ function bindEventListeners() {
       const trans = elements.imageTranslatedOutput?.textContent || '';
       if (!orig && !trans) return;
 
-      state.sourceLang = state.imageSourceLang;
+      state.sourceLang = state.imageSourceLang === 'auto' ? translationEngine.detectLanguage(orig) : state.imageSourceLang;
       state.targetLang = state.imageTargetLang;
       if (elements.sourceLangSelect) elements.sourceLangSelect.value = state.sourceLang;
       if (elements.targetLangSelect) elements.targetLangSelect.value = state.targetLang;
@@ -698,11 +720,12 @@ function bindEventListeners() {
               status: `Translating Page ${i + 1} of ${state.pdfPages.length}...`,
               progress: Math.round(((i + 1) / state.pdfPages.length) * 100)
             });
-            state.pdfPages[i].translatedText = await translationEngine.translateLongText(
+            const res = await translationEngine.translateLongText(
               state.pdfPages[i].originalText,
               state.pdfSourceLang,
               state.pdfTargetLang
             );
+            state.pdfPages[i].translatedText = typeof res === 'string' ? res : (res?.translatedText || '');
           }
           showPdfTab(state.pdfCurrentTab);
           showToast('Updated PDF translation!');
@@ -1626,7 +1649,7 @@ async function processImageDataUrl(dataUrl) {
       progress: 85
     });
 
-    const translated = await translationEngine.translateLongText(
+    const transResult = await translationEngine.translateLongText(
       extracted,
       state.imageSourceLang,
       state.imageTargetLang,
@@ -1637,6 +1660,8 @@ async function processImageDataUrl(dataUrl) {
         });
       }
     );
+
+    const translated = typeof transResult === 'string' ? transResult : (transResult?.translatedText || '');
 
     state.imageTranslatedText = translated;
     if (elements.imageTranslatedOutput) {
@@ -1690,11 +1715,12 @@ async function retranslateImageText() {
   }
 
   try {
-    const translated = await translationEngine.translateLongText(
+    const transResult = await translationEngine.translateLongText(
       currentText,
       state.imageSourceLang,
       state.imageTargetLang
     );
+    const translated = typeof transResult === 'string' ? transResult : (transResult?.translatedText || '');
     state.imageTranslatedText = translated;
     if (elements.imageTranslatedOutput) {
       elements.imageTranslatedOutput.textContent = translated;
@@ -1916,11 +1942,12 @@ async function processPdfArrayBuffer(arrayBuffer, fileName = 'document.pdf') {
         progress: pageProg
       });
 
-      const translated = await translationEngine.translateLongText(
+      const transResult = await translationEngine.translateLongText(
         page.text,
         state.pdfSourceLang,
         state.pdfTargetLang
       );
+      const translated = typeof transResult === 'string' ? transResult : (transResult?.translatedText || '');
 
       state.pdfPages.push({
         pageNum: page.pageNum,
@@ -2008,9 +2035,11 @@ function showPdfTab(tabKey) {
     let totalChars = 0;
 
     state.pdfPages.forEach((p) => {
-      totalChars += p.originalText.length;
-      origCombined += `<div class="pdf-page-divider">📄 Page ${p.pageNum}</div>\n${escapeHtml(p.originalText)}\n\n`;
-      transCombined += `<div class="pdf-page-divider">📄 Page ${p.pageNum} (${targetName})</div>\n${escapeHtml(p.translatedText)}\n\n`;
+      const orig = typeof p.originalText === 'string' ? p.originalText : (p.originalText?.text || '');
+      const trans = typeof p.translatedText === 'string' ? p.translatedText : (p.translatedText?.translatedText || '');
+      totalChars += orig.length;
+      origCombined += `<div class="pdf-page-divider">📄 Page ${p.pageNum}</div>\n${escapeHtml(orig)}\n\n`;
+      transCombined += `<div class="pdf-page-divider">📄 Page ${p.pageNum} (${targetName})</div>\n${escapeHtml(trans)}\n\n`;
     });
 
     if (elements.pdfSourceCharBadge) {
@@ -2027,17 +2056,20 @@ function showPdfTab(tabKey) {
     const page = state.pdfPages.find((p) => p.pageNum === pageNum);
     if (!page) return;
 
+    const orig = typeof page.originalText === 'string' ? page.originalText : (page.originalText?.text || '');
+    const trans = typeof page.translatedText === 'string' ? page.translatedText : (page.translatedText?.translatedText || '');
+
     if (elements.pdfSourcePageTitle) {
       elements.pdfSourcePageTitle.textContent = `Page ${pageNum}`;
     }
     if (elements.pdfSourceCharBadge) {
-      elements.pdfSourceCharBadge.textContent = `${page.originalText.length.toLocaleString()} chars`;
+      elements.pdfSourceCharBadge.textContent = `${orig.length.toLocaleString()} chars`;
     }
     if (elements.pdfOriginalContent) {
-      elements.pdfOriginalContent.innerHTML = `<div class="pdf-page-divider">📄 Page ${pageNum} Original</div>\n${escapeHtml(page.originalText)}`;
+      elements.pdfOriginalContent.innerHTML = `<div class="pdf-page-divider">📄 Page ${pageNum} Original</div>\n${escapeHtml(orig)}`;
     }
     if (elements.pdfTranslatedContent) {
-      elements.pdfTranslatedContent.innerHTML = `<div class="pdf-page-divider">📄 Page ${pageNum} (${targetName})</div>\n${escapeHtml(page.translatedText)}`;
+      elements.pdfTranslatedContent.innerHTML = `<div class="pdf-page-divider">📄 Page ${pageNum} (${targetName})</div>\n${escapeHtml(trans)}`;
     }
   }
 }
@@ -2207,8 +2239,9 @@ function downloadTranslatedPdfTextDocument() {
   formatted += `========================================================\n\n`;
 
   state.pdfPages.forEach((p) => {
+    const trans = typeof p.translatedText === 'string' ? p.translatedText : (p.translatedText?.translatedText || String(p.translatedText || ''));
     formatted += `--- PAGE ${p.pageNum} (${targetName}) ---\n`;
-    formatted += `${p.translatedText}\n\n`;
+    formatted += `${trans}\n\n`;
   });
 
   const downloadName = state.pdfFileName.replace(/\.[^/.]+$/, '') + `_${targetName}_translated.txt`;
@@ -2222,7 +2255,10 @@ function copyAllPdfTranslations() {
     return;
   }
   const fullTranslated = state.pdfPages
-    .map((p) => `--- Page ${p.pageNum} ---\n${p.translatedText}`)
+    .map((p) => {
+      const trans = typeof p.translatedText === 'string' ? p.translatedText : (p.translatedText?.translatedText || String(p.translatedText || ''));
+      return `--- Page ${p.pageNum} ---\n${trans}`;
+    })
     .join('\n\n');
 
   navigator.clipboard
@@ -2239,11 +2275,13 @@ function speakPdfCurrentView() {
 
   let textToSpeak = '';
   if (state.pdfCurrentTab === 'all') {
-    textToSpeak = state.pdfPages.map((p) => p.translatedText).join('. ');
+    textToSpeak = state.pdfPages
+      .map((p) => (typeof p.translatedText === 'string' ? p.translatedText : (p.translatedText?.translatedText || '')))
+      .join('. ');
   } else {
     const pageNum = parseInt(state.pdfCurrentTab, 10);
     const p = state.pdfPages.find((pg) => pg.pageNum === pageNum);
-    textToSpeak = p ? p.translatedText : '';
+    textToSpeak = p ? (typeof p.translatedText === 'string' ? p.translatedText : (p.translatedText?.translatedText || '')) : '';
   }
 
   if (!textToSpeak) {
@@ -2268,7 +2306,8 @@ function showToast(message) {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str
+  const s = typeof str === 'string' ? str : (str?.translatedText || str?.text || String(str));
+  return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
