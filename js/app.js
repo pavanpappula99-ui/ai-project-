@@ -42,10 +42,6 @@ const elements = {
   // Theme & Navigation
   html: document.documentElement,
   themeToggleBtn: document.getElementById('themeToggleBtn'),
-  openChromeBtn: document.getElementById('openChromeBtn'),
-  browserNoticeBanner: document.getElementById('browserNoticeBanner'),
-  bannerOpenChromeBtn: document.getElementById('bannerOpenChromeBtn'),
-  closeBannerBtn: document.getElementById('closeBannerBtn'),
   toggleConvModeBtn: document.getElementById('toggleConvModeBtn'),
   openPhrasesBtn: document.getElementById('openPhrasesBtn'),
   openSettingsBtn: document.getElementById('openSettingsBtn'),
@@ -386,41 +382,6 @@ function bindEventListeners() {
     handleSourceTextChange();
     updateStarState();
   });
-
-  // --- Launch Google Chrome Handlers ---
-  const launchChrome = async () => {
-    showToast('Launching Google Chrome with Bharat Translator...');
-    try {
-      const res = await fetch('/api/open-chrome', { method: 'POST' });
-      const data = await res.json();
-      if (data.status === 'ok') {
-        showToast('Google Chrome launched! Full native voice recognition ready.');
-      } else {
-        showToast('Please open Google Chrome and visit http://localhost:3000');
-      }
-    } catch (e) {
-      showToast('Please open Google Chrome and visit http://localhost:3000');
-    }
-  };
-
-  if (elements.openChromeBtn) {
-    elements.openChromeBtn.addEventListener('click', launchChrome);
-  }
-  if (elements.bannerOpenChromeBtn) {
-    elements.bannerOpenChromeBtn.addEventListener('click', launchChrome);
-  }
-  if (elements.closeBannerBtn) {
-    elements.closeBannerBtn.addEventListener('click', () => {
-      if (elements.browserNoticeBanner) {
-        elements.browserNoticeBanner.classList.add('hidden');
-      }
-    });
-  }
-
-  // Show voice notice banner in Microsoft Edge
-  if (elements.browserNoticeBanner && speechEngine.isEdge()) {
-    elements.browserNoticeBanner.classList.remove('hidden');
-  }
 
   // --- Swap Languages Button (⇄) ---
   elements.swapLanguagesBtn.addEventListener('click', swapLanguages);
