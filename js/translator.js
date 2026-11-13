@@ -8,11 +8,30 @@
 
 import { getLanguage } from './config.js';
 import { getOfflineTranslation } from './phrases.js';
+import { lookupFoodTranslation, fixKnownTranslationFlaws } from './food-dictionary.js';
 
 class TranslationEngine {
   constructor() {
     this.cache = new Map();
     this.translitCache = new Map();
+  }
+
+  isStandardEnglishText(text) {
+    if (!text || typeof text !== 'string') return false;
+    const clean = text.toLowerCase().trim();
+    const commonWords = [
+      'curry', 'fry', 'rice', 'dal', 'menu', 'breakfast', 'lunch', 'dinner', 'snacks',
+      'special', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+      'brinjal', 'eggplant', 'potato', 'tomato', 'onion', 'curd', 'buttermilk', 'milk',
+      'water', 'tea', 'coffee', 'chicken', 'fish', 'mutton', 'egg', 'paneer', 'palak',
+      'sambar', 'rasam', 'chapati', 'roti', 'poori', 'idli', 'dosa', 'vada', 'upma',
+      'welcome', 'station', 'platform', 'railway', 'hospital', 'hotel', 'restaurant',
+      'hostel', 'room', 'bus', 'train', 'airport', 'ticket', 'entry', 'exit', 'notice',
+      'please', 'good', 'morning', 'afternoon', 'evening', 'night', 'thank', 'you',
+      'ladies', 'finger', 'gourd', 'bottle', 'bitter', 'ridge', 'cabbage', 'cauliflower',
+      'carrot', 'beetroot', 'beans', 'poha', 'pongal', 'pesarattu', 'chutney', 'pickle'
+    ];
+    return commonWords.some((w) => new RegExp(`\\b${w}\\b`, 'i').test(clean));
   }
 
   getCacheKey(text, sourceLang, targetLang) {
@@ -129,9 +148,10 @@ class TranslationEngine {
    * @param {string} text - source text or phonetic slang in English letters
    * @param {string} sourceLang - source language id (e.g. 'te', 'hi', 'en', 'auto')
    * @param {string} targetLang - target language id (e.g. 'hi', 'te', 'en')
+   * @param {object} [options] - optional flags: skipTransliteration
    * @returns {Promise<{ translatedText: string, sourceTransliterated: string, provider: string, isOffline: boolean }>}
    */
-  async translate(text, sourceLang, targetLang) {
+  async translate(text, sourceLang, targetLang, options = {}) {
     if (!text || !text.trim()) {
       return {
         translatedText: '',
@@ -144,40 +164,66 @@ class TranslationEngine {
 
     const trimmed = text.trim();
 
-    // Auto-detect language if source is 'auto' or unspecified
-    if (sourceLang === 'auto' || !sourceLang) {
-      sourceLang = this.detectLanguage(trimmed);
-      if (sourceLang === targetLang) {
-        sourceLang = targetLang === 'en' ? 'hi' : 'en';
-      }
-    }
-
-    // Step 1: Phonetic Slang Transliteration
-    // If speaking language is an Indian language and user typed in English letters
-    let sourceTransliterated = trimmed;
-    let queryText = trimmed;
-
-    if (sourceLang !== 'en' && /[a-zA-Z]/.test(trimmed)) {
-      sourceTransliterated = await this.transliterate(trimmed, sourceLang);
-      queryText = sourceTransliterated;
-    }
-
-    // Step 2: If source and target are the same language
-    // e.g. User chose Telugu, typed "nuvvu", and wants pure Telugu spelling "నువ్వు"
-    if (sourceLang === targetLang) {
+    // Step 0: Check Food & Menu Dictionary for 100% authentic native meaning
+    const foodMatch = lookupFoodTranslation(trimmed, targetLang);
+    if (foodMatch) {
       return {
-        translatedText: sourceTransliterated,
-        sourceTransliterated,
-        provider: sourceTransliterated !== trimmed ? 'phonetic-transliteration' : 'identity',
+        translatedText: foodMatch,
+        sourceTransliterated: trimmed,
+        provider: 'food-dictionary',
         isOffline: false,
         toString() { return this.translatedText; }
       };
     }
 
+    // Auto-detect language if source is 'auto' or unspecified, or if script clearly differs
+    const detected = this.detectLanguage(trimmed);
+    if (sourceLang === 'auto' || !sourceLang) {
+      sourceLang = detected;
+      if (sourceLang === targetLang) {
+        sourceLang = targetLang === 'en' ? 'hi' : 'en';
+      }
+    } else if (sourceLang !== 'en' && detected === 'en' && /[a-zA-Z]{3,}/.test(trimmed)) {
+      // User has selected regional source, but text is actually English words/sentences!
+      // Treat source as English so it translates the actual meaning rather than phonetic slang
+      sourceLang = 'en';
+    }
+
+    // Step 1: Phonetic Slang Transliteration
+    // ONLY when user is typing regional slang in English letters (e.g. "nuvvu", "nenu", "aap kaise ho")
+    // NEVER on documents/images (options.skipTransliteration) and NEVER if text contains standard English vocabulary
+    let sourceTransliterated = trimmed;
+    let queryText = trimmed;
+
+    const isEnglishVocab = this.isStandardEnglishText(trimmed);
+    const allowTransliteration = !options.skipTransliteration && sourceLang !== 'en' && /[a-zA-Z]/.test(trimmed) && !isEnglishVocab;
+
+    if (allowTransliteration) {
+      sourceTransliterated = await this.transliterate(trimmed, sourceLang);
+      queryText = sourceTransliterated;
+    }
+
+    // Step 2: If source and target are the same language
+    if (sourceLang === targetLang) {
+      if (/[a-zA-Z]/.test(trimmed) && targetLang !== 'en') {
+        sourceLang = 'en'; // Force translate from English to native script
+      } else {
+        return {
+          translatedText: sourceTransliterated,
+          sourceTransliterated,
+          provider: sourceTransliterated !== trimmed ? 'phonetic-transliteration' : 'identity',
+          isOffline: false,
+          toString() { return this.translatedText; }
+        };
+      }
+    }
+
     const cacheKey = this.getCacheKey(queryText, sourceLang, targetLang);
     if (this.cache.has(cacheKey)) {
+      const cached = this.cache.get(cacheKey);
+      const polished = fixKnownTranslationFlaws(cached, targetLang);
       return {
-        translatedText: this.cache.get(cacheKey),
+        translatedText: polished,
         sourceTransliterated,
         provider: 'cache',
         isOffline: !navigator.onLine,
@@ -192,9 +238,10 @@ class TranslationEngine {
         getOfflineTranslation(trimmed, sourceLang, targetLang);
 
       if (offlineResult) {
-        this.cache.set(cacheKey, offlineResult);
+        const polished = fixKnownTranslationFlaws(offlineResult, targetLang);
+        this.cache.set(cacheKey, polished);
         return {
-          translatedText: offlineResult,
+          translatedText: polished,
           sourceTransliterated,
           provider: 'offline-phrasebook',
           isOffline: true,
@@ -218,12 +265,14 @@ class TranslationEngine {
         gtxResult.trim() &&
         !this.isIdentical(queryText, gtxResult, sourceLang, targetLang)
       ) {
-        this.cache.set(cacheKey, gtxResult);
+        const polished = fixKnownTranslationFlaws(gtxResult, targetLang);
+        this.cache.set(cacheKey, polished);
         return {
-          translatedText: gtxResult,
+          translatedText: polished,
           sourceTransliterated,
           provider: 'cloud-gtx',
-          isOffline: false
+          isOffline: false,
+          toString() { return this.translatedText; }
         };
       }
     } catch (gtxErr) {
@@ -249,12 +298,14 @@ class TranslationEngine {
           data.translatedText.trim() &&
           !this.isIdentical(queryText, data.translatedText, sourceLang, targetLang)
         ) {
-          this.cache.set(cacheKey, data.translatedText);
+          const polished = fixKnownTranslationFlaws(data.translatedText, targetLang);
+          this.cache.set(cacheKey, polished);
           return {
-            translatedText: data.translatedText,
+            translatedText: polished,
             sourceTransliterated,
             provider: data.provider || 'backend-api',
-            isOffline: false
+            isOffline: false,
+            toString() { return this.translatedText; }
           };
         }
       }
@@ -270,12 +321,14 @@ class TranslationEngine {
         myMemoryResult.trim() &&
         !this.isIdentical(queryText, myMemoryResult, sourceLang, targetLang)
       ) {
-        this.cache.set(cacheKey, myMemoryResult);
+        const polished = fixKnownTranslationFlaws(myMemoryResult, targetLang);
+        this.cache.set(cacheKey, polished);
         return {
-          translatedText: myMemoryResult,
+          translatedText: polished,
           sourceTransliterated,
           provider: 'mymemory-cloud',
-          isOffline: false
+          isOffline: false,
+          toString() { return this.translatedText; }
         };
       }
     } catch (mmErr) {
@@ -288,12 +341,14 @@ class TranslationEngine {
       getOfflineTranslation(trimmed, sourceLang, targetLang);
 
     if (dictionaryMatch) {
-      this.cache.set(cacheKey, dictionaryMatch);
+      const polished = fixKnownTranslationFlaws(dictionaryMatch, targetLang);
+      this.cache.set(cacheKey, polished);
       return {
-        translatedText: dictionaryMatch,
+        translatedText: polished,
         sourceTransliterated,
         provider: 'offline-phrasebook',
-        isOffline: false
+        isOffline: false,
+        toString() { return this.translatedText; }
       };
     }
 
@@ -301,8 +356,8 @@ class TranslationEngine {
   }
 
   /**
-   * Translate long multi-paragraph documents (PDFs, multi-line OCR text)
-   * Safely chunks text to avoid API size limits and reports progress.
+   * Translate long multi-paragraph documents (PDFs, multi-line OCR text, Mess Menus)
+   * Intelligently parses menu headers, dish items, line items, and chunks text safely.
    * @param {string} text
    * @param {string} sourceLang
    * @param {string} targetLang
@@ -319,14 +374,18 @@ class TranslationEngine {
     }
 
     let effectiveSource = sourceLang;
+    const detected = this.detectLanguage(text);
+
     if (effectiveSource === 'auto' || !effectiveSource) {
-      effectiveSource = this.detectLanguage(text);
+      effectiveSource = detected;
       if (effectiveSource === targetLang) {
         effectiveSource = targetLang === 'en' ? 'hi' : 'en';
       }
+    } else if (effectiveSource !== 'en' && detected === 'en' && /[a-zA-Z]{2,}/.test(text)) {
+      effectiveSource = 'en';
     }
 
-    if (effectiveSource === targetLang) {
+    if (effectiveSource === targetLang && !/[a-zA-Z]/.test(text)) {
       return {
         translatedText: text,
         provider: 'identity',
@@ -335,84 +394,137 @@ class TranslationEngine {
     }
 
     const trimmed = text.trim();
-    // If under 750 characters, translate directly in one go
-    if (trimmed.length <= 750) {
-      if (onProgress) onProgress(50, 1, 1);
-      const res = await this.translate(trimmed, effectiveSource, targetLang);
+
+    // Check single short text in food dictionary directly
+    const directFoodMatch = lookupFoodTranslation(trimmed, targetLang);
+    if (directFoodMatch) {
       if (onProgress) onProgress(100, 1, 1);
-      const str = typeof res === 'string' ? res : (res?.translatedText || trimmed);
       return {
-        translatedText: str,
-        provider: res?.provider || 'gtx',
+        translatedText: directFoodMatch,
+        provider: 'food-dictionary',
         toString() { return this.translatedText; }
       };
     }
 
-    // Split text into paragraphs
-    const paragraphs = trimmed.split(/\n+/);
-    const chunks = [];
-    let currentChunk = '';
+    // Helper: translate a single line or menu entry
+    const translateLineEntry = async (line) => {
+      const l = line.trim();
+      if (!l) return '';
 
-    for (const para of paragraphs) {
-      const p = para.trim();
-      if (!p) continue;
+      // Direct match for whole line
+      const lineMatch = lookupFoodTranslation(l, targetLang);
+      if (lineMatch) return lineMatch;
 
-      if ((currentChunk + '\n\n' + p).length <= 750) {
-        currentChunk = currentChunk ? currentChunk + '\n\n' + p : p;
-      } else {
-        if (currentChunk) chunks.push(currentChunk);
-        // If single paragraph is longer than 750 chars, split by sentences
-        if (p.length > 750) {
-          const sentences = p.split(/(?<=[.?!।\n])\s+/);
-          let sentChunk = '';
-          for (const s of sentences) {
-            if ((sentChunk + ' ' + s).length <= 750) {
-              sentChunk = sentChunk ? sentChunk + ' ' + s : s;
+      // Handle Key-Value headers (e.g. "Lunch: Rice, Dal Tadka, Brinjal Curry, Curd")
+      const colonIdx = l.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 35) {
+        const header = l.slice(0, colonIdx).trim();
+        const body = l.slice(colonIdx + 1).trim();
+
+        const translatedHeader = lookupFoodTranslation(header, targetLang) ||
+          (await this.translate(header, effectiveSource, targetLang, { skipTransliteration: true }))?.translatedText ||
+          header;
+
+        if (body.includes(',')) {
+          const items = body.split(',');
+          const translatedItems = [];
+          for (const item of items) {
+            const cleanItem = item.trim();
+            if (!cleanItem) continue;
+            const itemMatch = lookupFoodTranslation(cleanItem, targetLang);
+            if (itemMatch) {
+              translatedItems.push(itemMatch);
             } else {
-              if (sentChunk) chunks.push(sentChunk);
-              sentChunk = s;
+              const res = await this.translate(cleanItem, effectiveSource, targetLang, { skipTransliteration: true });
+              translatedItems.push(res?.translatedText || cleanItem);
             }
           }
-          if (sentChunk) currentChunk = sentChunk;
-          else currentChunk = '';
-        } else {
-          currentChunk = p;
+          return `${translatedHeader}: ${translatedItems.join(', ')}`;
+        } else if (body) {
+          const bodyMatch = lookupFoodTranslation(body, targetLang);
+          if (bodyMatch) return `${translatedHeader}: ${bodyMatch}`;
         }
       }
-    }
-    if (currentChunk) chunks.push(currentChunk);
 
-    if (chunks.length === 0) {
+      // Handle comma-separated list of dishes without colon
+      if (l.includes(',')) {
+        const items = l.split(',');
+        const translatedItems = [];
+        let matchesCount = 0;
+        for (const item of items) {
+          const cleanItem = item.trim();
+          if (!cleanItem) continue;
+          const itemMatch = lookupFoodTranslation(cleanItem, targetLang);
+          if (itemMatch) {
+            translatedItems.push(itemMatch);
+            matchesCount++;
+          } else {
+            const res = await this.translate(cleanItem, effectiveSource, targetLang, { skipTransliteration: true });
+            translatedItems.push(res?.translatedText || cleanItem);
+          }
+        }
+        if (matchesCount > 0) {
+          return translatedItems.join(', ');
+        }
+      }
+
+      const res = await this.translate(l, effectiveSource, targetLang, { skipTransliteration: true });
+      const str = typeof res === 'string' ? res : (res?.translatedText || l);
+      return fixKnownTranslationFlaws(str, targetLang);
+    };
+
+    // Split text into individual lines
+    const lines = trimmed.split('\n');
+
+    // If it's a multi-line list / menu / document (more than 1 line)
+    if (lines.length > 1) {
+      const translatedLines = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) {
+          translatedLines.push('');
+          continue;
+        }
+
+        if (onProgress) {
+          const percent = Math.round(((i + 1) / lines.length) * 100);
+          onProgress(percent, i + 1, lines.length);
+        }
+
+        try {
+          const transLine = await translateLineEntry(line);
+          translatedLines.push(transLine);
+        } catch (err) {
+          console.warn(`Line translation failed for line ${i + 1}:`, err.message);
+          translatedLines.push(line);
+        }
+      }
+
+      const finalDocument = translatedLines.join('\n');
       return {
-        translatedText: '',
-        provider: 'none',
+        translatedText: fixKnownTranslationFlaws(finalDocument, targetLang),
+        provider: 'menu-aware-multiline',
         toString() { return this.translatedText; }
       };
     }
 
-    const translatedChunks = [];
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      if (onProgress) {
-        const percent = Math.round(((i + 1) / chunks.length) * 100);
-        onProgress(percent, i + 1, chunks.length);
-      }
-      try {
-        const result = await this.translate(chunk, effectiveSource, targetLang);
-        const chunkText = typeof result === 'string' ? result : (result?.translatedText || chunk);
-        translatedChunks.push(chunkText);
-      } catch (err) {
-        console.warn(`Translation of chunk ${i + 1} failed:`, err.message);
-        translatedChunks.push(chunk);
-      }
-      if (chunks.length > 1) {
-        await new Promise((r) => setTimeout(r, 120));
-      }
+    // Single line text (under 750 chars)
+    if (trimmed.length <= 750) {
+      if (onProgress) onProgress(50, 1, 1);
+      const res = await translateLineEntry(trimmed);
+      if (onProgress) onProgress(100, 1, 1);
+      return {
+        translatedText: fixKnownTranslationFlaws(res, targetLang),
+        provider: 'enhanced-single-line',
+        toString() { return this.translatedText; }
+      };
     }
 
+    // Long multi-paragraph document fallback
+    const res = await translateLineEntry(trimmed);
     return {
-      translatedText: translatedChunks.join('\n\n'),
-      provider: 'chunked-translation',
+      translatedText: fixKnownTranslationFlaws(res, targetLang),
+      provider: 'long-document',
       toString() { return this.translatedText; }
     };
   }
