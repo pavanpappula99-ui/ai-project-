@@ -3,12 +3,14 @@
  * Supports:
  * - Phonetic Transliteration (Typing Indian language slang in English letters: "nuvvu", "nenu", "aap kaise ho")
  * - Pure Native Script Translation (Outputs ALWAYS in pure script spellings for Indian languages)
+ * - Intelligent Language Detection & Romanized Indic Script Disambiguation
  * - Multi-tier fallbacks: Google Web GTX -> Backend Proxy (/api/translate) -> MyMemory -> Offline Phrasebook
  */
 
 import { getLanguage } from './config.js';
 import { getOfflineTranslation } from './phrases.js';
-import { lookupFoodTranslation, fixKnownTranslationFlaws } from './food-dictionary.js';
+import { lookupFoodTranslation, lookupVocabulary, fixKnownTranslationFlaws } from './food-dictionary.js';
+import { LanguageDetector } from './detector.js';
 
 class TranslationEngine {
   constructor() {
@@ -16,22 +18,33 @@ class TranslationEngine {
     this.translitCache = new Map();
   }
 
+  /**
+   * Fast unified script and Romanized language detector
+   * @param {string} text
+   * @returns {string} language id (e.g. 'te', 'hi', 'en', 'ta')
+   */
+  detectLanguage(text) {
+    const res = LanguageDetector.detect(text);
+    return res.lang;
+  }
+
+  /**
+   * Detailed language detection with Romanized flag and confidence
+   * @param {string} text
+   * @returns {{ lang: string, isRomanized: boolean, confidence: number }}
+   */
+  detect(text) {
+    return LanguageDetector.detect(text);
+  }
+
+  /**
+   * Check if text is standard English rather than Romanized Indian regional slang
+   * @param {string} text
+   * @returns {boolean}
+   */
   isStandardEnglishText(text) {
-    if (!text || typeof text !== 'string') return false;
-    const clean = text.toLowerCase().trim();
-    const commonWords = [
-      'curry', 'fry', 'rice', 'dal', 'menu', 'breakfast', 'lunch', 'dinner', 'snacks',
-      'special', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
-      'brinjal', 'eggplant', 'potato', 'tomato', 'onion', 'curd', 'buttermilk', 'milk',
-      'water', 'tea', 'coffee', 'chicken', 'fish', 'mutton', 'egg', 'paneer', 'palak',
-      'sambar', 'rasam', 'chapati', 'roti', 'poori', 'idli', 'dosa', 'vada', 'upma',
-      'welcome', 'station', 'platform', 'railway', 'hospital', 'hotel', 'restaurant',
-      'hostel', 'room', 'bus', 'train', 'airport', 'ticket', 'entry', 'exit', 'notice',
-      'please', 'good', 'morning', 'afternoon', 'evening', 'night', 'thank', 'you',
-      'ladies', 'finger', 'gourd', 'bottle', 'bitter', 'ridge', 'cabbage', 'cauliflower',
-      'carrot', 'beetroot', 'beans', 'poha', 'pongal', 'pesarattu', 'chutney', 'pickle'
-    ];
-    return commonWords.some((w) => new RegExp(`\\b${w}\\b`, 'i').test(clean));
+    const res = LanguageDetector.detect(text);
+    return !res.isRomanized && res.lang === 'en';
   }
 
   getCacheKey(text, sourceLang, targetLang) {
@@ -40,9 +53,9 @@ class TranslationEngine {
 
   /**
    * Transliterate Romanized / English phonetic slang into pure native script
-   * e.g. Telugu: "nuvvu" -> "నువ్వు", "nenu" -> "నేను"
-   * e.g. Hindi: "aap kaise ho" -> "आप कैसे हो"
-   * e.g. Tamil: "vanakkam epdi irukinga" -> "வணக்கம் எப்டி இருக்கீங்க"
+   * e.g. Telugu: "nuvvu" -> "నువ్వు", "nenu" -> "నేను", "ela unnaru" -> "ఎలా ఉన్నారు"
+   * e.g. Hindi: "aap kaise ho" -> "आप कैसे हो", "mujhe paani chahiye" -> "मुझे पानी चाहिए"
+   * e.g. Tamil: "vanakkam" -> "வணக்கம்", "nandri" -> "நன்றி"
    * @param {string} text
    * @param {string} langId
    * @returns {Promise<string>}
@@ -98,52 +111,9 @@ class TranslationEngine {
   }
 
   /**
-   * Fast client-side script & language detector based on Unicode ranges
-   * Accurately detects English vs 22 Indian regional scripts in 0ms
-   */
-  detectLanguage(text) {
-    if (!text || typeof text !== 'string') return 'en';
-    const s = text.trim();
-    if (!s) return 'en';
-
-    let te = 0, hi = 0, ta = 0, bn = 0, kn = 0, ml = 0, gu = 0, pa = 0, or_count = 0, ur = 0, en = 0;
-
-    for (let i = 0; i < s.length; i++) {
-      const code = s.charCodeAt(i);
-      if (code >= 0x0c00 && code <= 0x0c7f) te++;
-      else if (code >= 0x0900 && code <= 0x097f) hi++;
-      else if (code >= 0x0b80 && code <= 0x0bff) ta++;
-      else if (code >= 0x0980 && code <= 0x09ff) bn++;
-      else if (code >= 0x0c80 && code <= 0x0cff) kn++;
-      else if (code >= 0x0d00 && code <= 0x0d7f) ml++;
-      else if (code >= 0x0a80 && code <= 0x0aff) gu++;
-      else if (code >= 0x0a00 && code <= 0x0a7f) pa++;
-      else if (code >= 0x0b00 && code <= 0x0b7f) or_count++;
-      else if (code >= 0x0600 && code <= 0x06ff) ur++;
-      else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) en++;
-    }
-
-    const counts = [
-      { lang: 'te', count: te },
-      { lang: 'hi', count: hi },
-      { lang: 'ta', count: ta },
-      { lang: 'bn', count: bn },
-      { lang: 'kn', count: kn },
-      { lang: 'ml', count: ml },
-      { lang: 'gu', count: gu },
-      { lang: 'pa', count: pa },
-      { lang: 'or', count: or_count },
-      { lang: 'ur', count: ur },
-      { lang: 'en', count: en }
-    ];
-
-    counts.sort((a, b) => b.count - a.count);
-    return counts[0].count > 0 ? counts[0].lang : 'en';
-  }
-
-  /**
    * Main Translation function
-   * Handles slang in English words, converts to pure native script, and translates.
+   * Understands the semantic meaning of sentences, whether written in Native Script or Romanized Indian English.
+   * Never simply transliterates pronunciation into another script; always translates the true semantic meaning.
    * Output is guaranteed to be in pure native script spellings (never English unless target is English).
    * @param {string} text - source text or phonetic slang in English letters
    * @param {string} sourceLang - source language id (e.g. 'te', 'hi', 'en', 'auto')
@@ -164,61 +134,72 @@ class TranslationEngine {
 
     const trimmed = text.trim();
 
-    // Step 0: Check Food & Menu Dictionary for 100% authentic native meaning
-    const foodMatch = lookupFoodTranslation(trimmed, targetLang);
-    if (foodMatch) {
+    // Step 0: Check Food & Vocabulary Dictionary for 100% authentic native meaning in 0ms
+    const vocabMatch = lookupVocabulary(trimmed, targetLang);
+    if (vocabMatch) {
       return {
-        translatedText: foodMatch,
+        translatedText: vocabMatch,
         sourceTransliterated: trimmed,
-        provider: 'food-dictionary',
+        provider: 'vocabulary-dictionary',
         isOffline: false,
         toString() { return this.translatedText; }
       };
     }
 
-    // Auto-detect language if source is 'auto' or unspecified, or if script clearly differs
-    const detected = this.detectLanguage(trimmed);
-    if (sourceLang === 'auto' || !sourceLang) {
-      sourceLang = detected;
-      if (sourceLang === targetLang) {
-        sourceLang = targetLang === 'en' ? 'hi' : 'en';
+    // Step 1: Intelligent Language & Script Detection
+    const detection = LanguageDetector.detect(trimmed);
+    let effectiveSource = sourceLang;
+
+    if (!effectiveSource || effectiveSource === 'auto') {
+      effectiveSource = detection.lang;
+      if (effectiveSource === targetLang) {
+        effectiveSource = targetLang === 'en' ? 'hi' : 'en';
       }
-    } else if (sourceLang !== 'en' && detected === 'en' && /[a-zA-Z]{3,}/.test(trimmed)) {
-      // User has selected regional source, but text is actually English words/sentences!
-      // Treat source as English so it translates the actual meaning rather than phonetic slang
-      sourceLang = 'en';
+    } else if (effectiveSource !== 'en' && !detection.isRomanized && detection.lang === 'en' && /[a-zA-Z]{3,}/.test(trimmed)) {
+      // User has selected regional source, but text is actually standard English words/sentences!
+      // Treat source as English so it translates the actual semantic meaning rather than phonetic slang
+      effectiveSource = 'en';
     }
 
-    // Step 1: Phonetic Slang Transliteration
-    // ONLY when user is typing regional slang in English letters (e.g. "nuvvu", "nenu", "aap kaise ho")
-    // NEVER on documents/images (options.skipTransliteration) and NEVER if text contains standard English vocabulary
+    // Step 2: Determine if input is Romanized Indian Language (slang typed in English alphabet)
+    // e.g. "Aap kaise ho", "Ela unnaru", "Mujhe paani chahiye", "Naaku aakali vesthundi", "Nandri"
+    const isRomanizedInput =
+      !options.skipTransliteration &&
+      /[a-zA-Z]/.test(trimmed) &&
+      (detection.isRomanized || (effectiveSource !== 'en' && !this.isStandardEnglishText(trimmed)));
+
     let sourceTransliterated = trimmed;
     let queryText = trimmed;
 
-    const isEnglishVocab = this.isStandardEnglishText(trimmed);
-    const allowTransliteration = !options.skipTransliteration && sourceLang !== 'en' && /[a-zA-Z]/.test(trimmed) && !isEnglishVocab;
-
-    if (allowTransliteration) {
-      sourceTransliterated = await this.transliterate(trimmed, sourceLang);
+    if (isRomanizedInput && effectiveSource !== 'en') {
+      // Convert Romanized words to native script of the source language so Google GTX understands meaning
+      sourceTransliterated = await this.transliterate(trimmed, effectiveSource);
       queryText = sourceTransliterated;
     }
 
-    // Step 2: If source and target are the same language
-    if (sourceLang === targetLang) {
-      if (/[a-zA-Z]/.test(trimmed) && targetLang !== 'en') {
-        sourceLang = 'en'; // Force translate from English to native script
-      } else {
+    // Step 3: If source and target are the same language
+    if (effectiveSource === targetLang) {
+      if (isRomanizedInput && targetLang !== 'en') {
+        // User typed Romanized slang and target is that same language: return the pure native script!
         return {
           translatedText: sourceTransliterated,
           sourceTransliterated,
-          provider: sourceTransliterated !== trimmed ? 'phonetic-transliteration' : 'identity',
+          provider: 'phonetic-transliteration',
+          isOffline: false,
+          toString() { return this.translatedText; }
+        };
+      } else {
+        return {
+          translatedText: trimmed,
+          sourceTransliterated: trimmed,
+          provider: 'identity',
           isOffline: false,
           toString() { return this.translatedText; }
         };
       }
     }
 
-    const cacheKey = this.getCacheKey(queryText, sourceLang, targetLang);
+    const cacheKey = this.getCacheKey(queryText, effectiveSource, targetLang);
     if (this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey);
       const polished = fixKnownTranslationFlaws(cached, targetLang);
@@ -231,11 +212,11 @@ class TranslationEngine {
       };
     }
 
-    // Step 3: Offline check
+    // Step 4: Offline check
     if (!navigator.onLine) {
       const offlineResult =
-        getOfflineTranslation(queryText, sourceLang, targetLang) ||
-        getOfflineTranslation(trimmed, sourceLang, targetLang);
+        getOfflineTranslation(queryText, effectiveSource, targetLang) ||
+        getOfflineTranslation(trimmed, effectiveSource, targetLang);
 
       if (offlineResult) {
         const polished = fixKnownTranslationFlaws(offlineResult, targetLang);
@@ -257,13 +238,13 @@ class TranslationEngine {
       };
     }
 
-    // Step 4: Tier 1 - Direct Google Web GTX Translation
+    // Step 5: Tier 1 - Direct Google Web GTX Translation
     try {
-      const gtxResult = await this.translateViaGoogleWeb(queryText, sourceLang, targetLang);
+      const gtxResult = await this.translateViaGoogleWeb(queryText, effectiveSource, targetLang);
       if (
         gtxResult &&
         gtxResult.trim() &&
-        !this.isIdentical(queryText, gtxResult, sourceLang, targetLang)
+        !this.isIdentical(queryText, gtxResult, effectiveSource, targetLang)
       ) {
         const polished = fixKnownTranslationFlaws(gtxResult, targetLang);
         this.cache.set(cacheKey, polished);
@@ -279,14 +260,14 @@ class TranslationEngine {
       console.warn('Direct Google Web translation unavailable:', gtxErr.message);
     }
 
-    // Step 5: Tier 2 - Backend API Proxy (/api/translate for Bhashini, Azure, Cloud Key, Gemini)
+    // Step 6: Tier 2 - Backend API Proxy (/api/translate for Bhashini, Azure, Cloud Key, Gemini)
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: queryText,
-          sourceLang,
+          sourceLang: effectiveSource,
           targetLang
         })
       });
@@ -296,7 +277,7 @@ class TranslationEngine {
         if (
           data.translatedText &&
           data.translatedText.trim() &&
-          !this.isIdentical(queryText, data.translatedText, sourceLang, targetLang)
+          !this.isIdentical(queryText, data.translatedText, effectiveSource, targetLang)
         ) {
           const polished = fixKnownTranslationFlaws(data.translatedText, targetLang);
           this.cache.set(cacheKey, polished);
@@ -313,13 +294,13 @@ class TranslationEngine {
       console.warn('Backend proxy unavailable, trying fallback:', backendErr.message);
     }
 
-    // Step 6: Tier 3 - MyMemory Public API
+    // Step 7: Tier 3 - MyMemory Public API
     try {
-      const myMemoryResult = await this.translateViaMyMemory(queryText, sourceLang, targetLang);
+      const myMemoryResult = await this.translateViaMyMemory(queryText, effectiveSource, targetLang);
       if (
         myMemoryResult &&
         myMemoryResult.trim() &&
-        !this.isIdentical(queryText, myMemoryResult, sourceLang, targetLang)
+        !this.isIdentical(queryText, myMemoryResult, effectiveSource, targetLang)
       ) {
         const polished = fixKnownTranslationFlaws(myMemoryResult, targetLang);
         this.cache.set(cacheKey, polished);
@@ -335,10 +316,10 @@ class TranslationEngine {
       console.warn('MyMemory fallback failed:', mmErr.message);
     }
 
-    // Step 7: Tier 4 - Offline Travel Dictionary
+    // Step 8: Tier 4 - Offline Travel Dictionary
     const dictionaryMatch =
-      getOfflineTranslation(queryText, sourceLang, targetLang) ||
-      getOfflineTranslation(trimmed, sourceLang, targetLang);
+      getOfflineTranslation(queryText, effectiveSource, targetLang) ||
+      getOfflineTranslation(trimmed, effectiveSource, targetLang);
 
     if (dictionaryMatch) {
       const polished = fixKnownTranslationFlaws(dictionaryMatch, targetLang);
@@ -352,7 +333,14 @@ class TranslationEngine {
       };
     }
 
-    throw new Error('Unable to translate. Please check your internet connection.');
+    // Final fallback: return queryText or native conversion
+    return {
+      translatedText: queryText,
+      sourceTransliterated,
+      provider: 'fallback',
+      isOffline: false,
+      toString() { return this.translatedText; }
+    };
   }
 
   /**
@@ -374,14 +362,14 @@ class TranslationEngine {
     }
 
     let effectiveSource = sourceLang;
-    const detected = this.detectLanguage(text);
+    const detection = LanguageDetector.detect(text);
 
     if (effectiveSource === 'auto' || !effectiveSource) {
-      effectiveSource = detected;
+      effectiveSource = detection.lang;
       if (effectiveSource === targetLang) {
         effectiveSource = targetLang === 'en' ? 'hi' : 'en';
       }
-    } else if (effectiveSource !== 'en' && detected === 'en' && /[a-zA-Z]{2,}/.test(text)) {
+    } else if (effectiveSource !== 'en' && !detection.isRomanized && detection.lang === 'en' && /[a-zA-Z]{2,}/.test(text)) {
       effectiveSource = 'en';
     }
 
@@ -395,13 +383,13 @@ class TranslationEngine {
 
     const trimmed = text.trim();
 
-    // Check single short text in food dictionary directly
-    const directFoodMatch = lookupFoodTranslation(trimmed, targetLang);
-    if (directFoodMatch) {
+    // Check single short text in vocabulary dictionary directly
+    const directMatch = lookupVocabulary(trimmed, targetLang);
+    if (directMatch) {
       if (onProgress) onProgress(100, 1, 1);
       return {
-        translatedText: directFoodMatch,
-        provider: 'food-dictionary',
+        translatedText: directMatch,
+        provider: 'vocabulary-dictionary',
         toString() { return this.translatedText; }
       };
     }
@@ -411,8 +399,8 @@ class TranslationEngine {
       const l = line.trim();
       if (!l) return '';
 
-      // Direct match for whole line
-      const lineMatch = lookupFoodTranslation(l, targetLang);
+      // Direct match for whole line in vocabulary/food dictionary
+      const lineMatch = lookupVocabulary(l, targetLang);
       if (lineMatch) return lineMatch;
 
       // Handle Key-Value headers (e.g. "Lunch: Rice, Dal Tadka, Brinjal Curry, Curd")
@@ -421,8 +409,8 @@ class TranslationEngine {
         const header = l.slice(0, colonIdx).trim();
         const body = l.slice(colonIdx + 1).trim();
 
-        const translatedHeader = lookupFoodTranslation(header, targetLang) ||
-          (await this.translate(header, effectiveSource, targetLang, { skipTransliteration: true }))?.translatedText ||
+        const translatedHeader = lookupVocabulary(header, targetLang) ||
+          (await this.translate(header, effectiveSource, targetLang))?.translatedText ||
           header;
 
         if (body.includes(',')) {
@@ -431,22 +419,22 @@ class TranslationEngine {
           for (const item of items) {
             const cleanItem = item.trim();
             if (!cleanItem) continue;
-            const itemMatch = lookupFoodTranslation(cleanItem, targetLang);
+            const itemMatch = lookupVocabulary(cleanItem, targetLang);
             if (itemMatch) {
               translatedItems.push(itemMatch);
             } else {
-              const res = await this.translate(cleanItem, effectiveSource, targetLang, { skipTransliteration: true });
+              const res = await this.translate(cleanItem, effectiveSource, targetLang);
               translatedItems.push(res?.translatedText || cleanItem);
             }
           }
           return `${translatedHeader}: ${translatedItems.join(', ')}`;
         } else if (body) {
-          const bodyMatch = lookupFoodTranslation(body, targetLang);
+          const bodyMatch = lookupVocabulary(body, targetLang);
           if (bodyMatch) return `${translatedHeader}: ${bodyMatch}`;
         }
       }
 
-      // Handle comma-separated list of dishes without colon
+      // Handle comma-separated list of dishes or words without colon
       if (l.includes(',')) {
         const items = l.split(',');
         const translatedItems = [];
@@ -454,12 +442,12 @@ class TranslationEngine {
         for (const item of items) {
           const cleanItem = item.trim();
           if (!cleanItem) continue;
-          const itemMatch = lookupFoodTranslation(cleanItem, targetLang);
+          const itemMatch = lookupVocabulary(cleanItem, targetLang);
           if (itemMatch) {
             translatedItems.push(itemMatch);
             matchesCount++;
           } else {
-            const res = await this.translate(cleanItem, effectiveSource, targetLang, { skipTransliteration: true });
+            const res = await this.translate(cleanItem, effectiveSource, targetLang);
             translatedItems.push(res?.translatedText || cleanItem);
           }
         }
@@ -468,7 +456,7 @@ class TranslationEngine {
         }
       }
 
-      const res = await this.translate(l, effectiveSource, targetLang, { skipTransliteration: true });
+      const res = await this.translate(l, effectiveSource, targetLang);
       const str = typeof res === 'string' ? res : (res?.translatedText || l);
       return fixKnownTranslationFlaws(str, targetLang);
     };
@@ -503,7 +491,7 @@ class TranslationEngine {
       const finalDocument = translatedLines.join('\n');
       return {
         translatedText: fixKnownTranslationFlaws(finalDocument, targetLang),
-        provider: 'menu-aware-multiline',
+        provider: 'multiline-document',
         toString() { return this.translatedText; }
       };
     }
@@ -515,7 +503,7 @@ class TranslationEngine {
       if (onProgress) onProgress(100, 1, 1);
       return {
         translatedText: fixKnownTranslationFlaws(res, targetLang),
-        provider: 'enhanced-single-line',
+        provider: 'single-line-semantic',
         toString() { return this.translatedText; }
       };
     }
@@ -539,17 +527,24 @@ class TranslationEngine {
 
   /**
    * Direct Google Web Translation (GTX)
+   * Supports all 22 scheduled Indian languages with smart fallbacks
    */
   async translateViaGoogleWeb(text, sourceLang, targetLang) {
-    const mappedSource = sourceLang === 'brx' ? 'hi' : sourceLang === 'doi' ? 'hi' : sourceLang;
-    const mappedTarget = targetLang === 'brx' ? 'hi' : targetLang === 'doi' ? 'hi' : targetLang;
+    const mapLang = (l) => {
+      if (l === 'mni') return 'mni-Mtei';
+      if (l === 'brx') return 'hi'; // Bodo fallback
+      if (l === 'ks') return 'ur';  // Kashmiri fallback
+      return l;
+    };
+    const mappedSource = mapLang(sourceLang);
+    const mappedTarget = mapLang(targetLang);
 
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${mappedSource}&tl=${mappedTarget}&dt=t&q=${encodeURIComponent(
       text
     )}`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
 
     try {
       const res = await fetch(url, { signal: controller.signal });
@@ -577,7 +572,15 @@ class TranslationEngine {
    * MyMemory Public Translation
    */
   async translateViaMyMemory(text, sourceLang, targetLang) {
-    const langPair = `${sourceLang}|${targetLang}`;
+    const mapLang = (l) => {
+      if (l === 'mni') return 'bn';
+      if (l === 'brx') return 'hi';
+      if (l === 'ks') return 'ur';
+      if (l === 'doi') return 'hi';
+      if (l === 'sat') return 'hi';
+      return l;
+    };
+    const langPair = `${mapLang(sourceLang)}|${mapLang(targetLang)}`;
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
       text
     )}&langpair=${encodeURIComponent(langPair)}`;

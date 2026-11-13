@@ -294,7 +294,7 @@ export const DEFAULT_TARGET_LANG = 'hi';
 export const APP_CONFIG = {
   appName: 'Bharat Translator',
   tagline: 'Real-Time Voice & Text Translation for All Indian Languages',
-  version: '1.1.0',
+  version: '2.4.0',
   defaultDebounceMs: 500,
   maxHistoryItems: 100
 };

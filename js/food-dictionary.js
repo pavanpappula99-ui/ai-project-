@@ -1311,8 +1311,682 @@ export const FOOD_MENU_DICTIONARY = [
       gu: 'રવિવાર',
       pa: 'ਐਤਵਾਰ'
     }
+  },
+
+  // --- CONVERSATIONAL EXPRESSIONS & ROMANIZED GREETINGS ---
+  {
+    keys: ['aap kaise ho', 'aap kaise hain', 'tum kaise ho', 'kya haal hai', 'aap kaisa ho', 'kaise ho aap'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      bn: 'আপনি কেমন আছেন?',
+      mr: 'तुम्ही कसे आहात?',
+      gu: 'તમે કેમ છો?',
+      pa: 'ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?',
+      or: 'ଆପଣ କେମିତି ଅଛନ୍ତି?',
+      ur: 'آپ کیسے ہیں؟'
+    }
+  },
+  {
+    keys: ['ela unnaru', 'ela unnavu', 'bagunnara', 'bagunnava', 'meerela unnaru', 'ela unnav'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      bn: 'আপনি কেমন আছেন?',
+      mr: 'तुम्ही कसे आहात?',
+      gu: 'તમે કેમ છો?',
+      pa: 'ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?',
+      or: 'ଆପଣ କେମିତି ଅଛନ୍ତି?',
+      ur: 'آپ کیسے ہیں؟'
+    }
+  },
+  {
+    keys: ['eppadi irukkeenga', 'eppadi irukkinga', 'nalama', 'eppadi irukenga'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      bn: 'আপনি কেমন আছেন?',
+      mr: 'तुम्ही कसे आहात?',
+      gu: 'તમે કેમ છો?',
+      pa: 'ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?'
+    }
+  },
+  {
+    keys: ['sukhamano', 'sukhamanu', 'enthaanu vishesham'],
+    translations: {
+      en: 'Are you fine / How are you?',
+      te: 'సుఖంగా ఉన్నారా? (ఎలా ఉన్నారు?)',
+      hi: 'क्या आप ठीक हैं? (आप कैसे हैं?)',
+      ta: 'நலமாக இருக்கிறீர்களா?',
+      kn: 'ಆರಾಮಾಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      bn: 'আপনি ভালো আছেন?'
+    }
+  },
+  {
+    keys: ['hegiddira', 'hegiddiya', 'chennagiddira'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      bn: 'আপনি কেমন আছেন?'
+    }
+  },
+  {
+    keys: ['apni kemon achhen', 'kemon acho', 'kemon achen', 'kemon achis'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      bn: 'আপনি কেমন আছেন?',
+      mr: 'तुम्ही कसे आहात?'
+    }
+  },
+  {
+    keys: ['tusi kiven ho', 'kidda', 'kiddan', 'tussi kiven ho'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      ml: 'സുഖമാണോ?',
+      pa: 'ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?'
+    }
+  },
+  {
+    keys: ['kasa ahes', 'kase ahat', 'kasa kay'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      mr: 'तुम्ही कसे आहात?'
+    }
+  },
+  {
+    keys: ['kem cho', 'tame kem cho', 'kem cho tame'],
+    translations: {
+      en: 'How are you?',
+      te: 'మీరు ఎలా ఉన్నారు?',
+      hi: 'आप कैसे हैं?',
+      ta: 'எப்படி இருக்கிறீர்கள்?',
+      kn: 'ಹೇಗಿದ್ದೀರಾ?',
+      gu: 'તમે કેમ છો?'
+    }
+  },
+  {
+    keys: ['mujhe paani chahiye', 'mujhe pani chahiye', 'paani chahiye', 'pani chahiye'],
+    translations: {
+      en: 'I need water',
+      te: 'నాకు నీళ్లు కావాలి',
+      hi: 'मुझे पानी चाहिए',
+      ta: 'எனக்கு தண்ணீர் வேண்டும்',
+      kn: 'ನನಗೆ ನೀರು ಬೇಕು',
+      ml: 'എനിക്ക് വെള്ളം വേണം',
+      bn: 'আমার জল লাগবে',
+      mr: 'मला पाणी हवे आहे',
+      gu: 'મને પાણી જોઈએ છે',
+      pa: 'ਮੈਨੂੰ ਪਾਣੀ ਚਾਹੀਦਾ ਹੈ',
+      or: 'ମୋତେ ପାଣି ଦରକାର',
+      ur: 'مجھے پانی چاہیے'
+    }
+  },
+  {
+    keys: ['naaku neellu kavali', 'naaku neeru kavali', 'neellu kavali', 'neeru kavali'],
+    translations: {
+      en: 'I need water',
+      te: 'నాకు నీళ్లు కావాలి',
+      hi: 'मुझे पानी चाहिए',
+      ta: 'எனக்கு தண்ணீர் வேண்டும்',
+      kn: 'ನನಗೆ ನೀರು ಬೇಕು',
+      ml: 'എനിക്ക് വെള്ളം വേണം',
+      bn: 'আমার জল লাগবে',
+      mr: 'मला पाणी हवे आहे'
+    }
+  },
+  {
+    keys: ['naaku aakali vesthundi', 'naaku aakali vestundi', 'aakali vesthundi', 'aakali vestundi'],
+    translations: {
+      en: 'I am hungry',
+      te: 'నాకు ఆకలి వేస్తుంది',
+      hi: 'मुझे भूख लगी है',
+      ta: 'எனக்கு பசிக்கிறது',
+      kn: 'ನನಗೆ ಹಸಿವಾಗುತ್ತಿದೆ',
+      ml: 'എനിക്ക് വിശക്കുന്നു',
+      bn: 'আমার খিদে পেয়েছে',
+      mr: 'मला भूक लागली आहे',
+      gu: 'મને ભૂખ લાગી છે',
+      pa: 'ਮੈਨੂੰ ਭੁੱਖ ਲੱਗੀ ਹੈ'
+    }
+  },
+  {
+    keys: ['mujhe bhookh lagi hai', 'mujhe bhook lagi hai', 'bhookh lagi hai', 'bhook lagi hai'],
+    translations: {
+      en: 'I am hungry',
+      te: 'నాకు ఆకలి వేస్తుంది',
+      hi: 'मुझे भूख लगी है',
+      ta: 'எனக்கு பசிக்கிறது',
+      kn: 'ನನಗೆ ಹಸಿವಾಗುತ್ತಿದೆ',
+      ml: 'എനിക്ക് വിശക്കുന്നു',
+      bn: 'আমার খিদে পেয়েছে',
+      mr: 'मला भूक लागली आहे',
+      gu: 'મને ભૂખ લાગી છે',
+      pa: 'ਮੈਨੂੰ ਭੁੱਖ ਲੱਗੀ ਹੈ'
+    }
+  },
+  {
+    keys: ['nandri', 'romba nandri', 'mikka nandri'],
+    translations: {
+      en: 'Thank you',
+      te: 'ధన్యవాదాలు',
+      hi: 'धन्यवाद',
+      ta: 'நன்றி',
+      kn: 'ಧನ್ಯವಾದಗಳು',
+      ml: 'നന്ദി',
+      bn: 'ধন্যবাদ',
+      mr: 'धन्यवाद',
+      gu: 'આભાર',
+      pa: 'ਧੰਨਵਾਦ',
+      or: 'ଧନ୍ୟବାଦ',
+      ur: 'شکریہ'
+    }
+  },
+  {
+    keys: ['dhanyavadalu', 'chala dhanyavadalu'],
+    translations: {
+      en: 'Thank you very much',
+      te: 'చాలా ధన్యవాదాలు',
+      hi: 'बहुत-बहुत धन्यवाद',
+      ta: 'மிக்க நன்றி',
+      kn: 'ತುಂಬಾ ಧನ್ಯವಾದಗಳು',
+      ml: 'വളരെ നന്ദി',
+      bn: 'অনেক ধন্যবাদ',
+      mr: 'खूप खूप धन्यवाद',
+      gu: 'ખૂબ ખૂબ આભાર',
+      pa: 'ਬਹੁਤ ਬਹੁਤ ਧੰਨਵਾਦ'
+    }
+  },
+  {
+    keys: ['shukriya', 'bahut shukriya', 'dhanyavaad', 'bahut dhanyavaad'],
+    translations: {
+      en: 'Thank you',
+      te: 'ధన్యవాదాలు',
+      hi: 'धन्यवाद / शुक्रिया',
+      ta: 'நன்றி',
+      kn: 'ಧನ್ಯವಾದಗಳು',
+      ml: 'നന്ദി',
+      bn: 'ধন্যবাদ',
+      mr: 'धन्यवाद',
+      gu: 'આભાર',
+      pa: 'ਧੰਨਵਾਦ'
+    }
+  },
+  {
+    keys: ['hello', 'namaste', 'namaskaram', 'vanakkam', 'namaskara'],
+    translations: {
+      en: 'Hello / Greetings',
+      te: 'నమస్కారం',
+      hi: 'नमस्ते',
+      ta: 'வணக்கம்',
+      kn: 'ನಮಸ್ಕಾರ',
+      ml: 'നമസ്കാരം',
+      bn: 'নমস্কার',
+      mr: 'नमस्कार',
+      gu: 'નમસ્તે',
+      pa: 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ',
+      or: 'ନମସ୍କାର',
+      ur: 'سلام'
+    }
+  },
+
+  // --- FRUITS & VEGETABLES ---
+  {
+    keys: ['apple', 'apples'],
+    translations: {
+      en: 'Apple',
+      te: 'ఆపిల్ (సేవ పండు)',
+      hi: 'सेब',
+      ta: 'ஆப்பிள்',
+      kn: 'ಸೇಬು',
+      ml: 'ആപ്പിൾ',
+      bn: 'আপেল',
+      mr: 'सफरचंद',
+      gu: 'સફરજન',
+      pa: 'ਸੇਬ'
+    }
+  },
+  {
+    keys: ['banana', 'bananas', 'kela', 'arati pandu'],
+    translations: {
+      en: 'Banana',
+      te: 'అరటిపండు',
+      hi: 'केला',
+      ta: 'வாழைப்பழம்',
+      kn: 'ಬಾಳೆಹಣ್ಣು',
+      ml: 'വാഴപ്പഴം',
+      bn: 'কলা',
+      mr: 'केळे',
+      gu: 'કેળું',
+      pa: 'ਕੇਲਾ'
+    }
+  },
+  {
+    keys: ['mango', 'mangoes', 'aam', 'mamidi pandu'],
+    translations: {
+      en: 'Mango',
+      te: 'మామిడిపండు',
+      hi: 'आम',
+      ta: 'மாம்பழம்',
+      kn: 'ಮಾವಿನಹಣ್ಣು',
+      ml: 'മാമ്പഴം',
+      bn: 'আম',
+      mr: 'आंबा',
+      gu: 'કેરી',
+      pa: 'ਅੰਬ'
+    }
+  },
+  {
+    keys: ['orange', 'oranges', 'santra', 'narinja'],
+    translations: {
+      en: 'Orange',
+      te: 'నారింజ పండు',
+      hi: 'संतरा',
+      ta: 'ஆரஞ்சு',
+      kn: 'ಕಿತ್ತಳೆ',
+      ml: 'ഓറഞ്ച്',
+      bn: 'কমলালেবু',
+      mr: 'संत्रे'
+    }
+  },
+  {
+    keys: ['grapes', 'draksha', 'angoor'],
+    translations: {
+      en: 'Grapes',
+      te: 'ద్రాక్ష',
+      hi: 'अंगूर',
+      ta: 'திராட்சை',
+      kn: 'ದ್ರಾಕ್ಷಿ',
+      ml: 'മുന്തിരി',
+      bn: 'আঙুর',
+      mr: 'द्राक्षे'
+    }
+  },
+  {
+    keys: ['papaya', 'boppayi', 'papita'],
+    translations: {
+      en: 'Papaya',
+      te: 'బొప్పాయి',
+      hi: 'पपीता',
+      ta: 'பப்பாளி',
+      kn: 'ಪಪ್ಪಾಯಿ',
+      ml: 'പപ്പായ',
+      bn: 'পেঁপে'
+    }
+  },
+  {
+    keys: ['guava', 'jama pandu', 'amrood'],
+    translations: {
+      en: 'Guava',
+      te: 'జామపండు',
+      hi: 'अमरूद',
+      ta: 'கொய்யா',
+      kn: 'ಸೀಬೆಹಣ್ಣು',
+      ml: 'പേരയ്ക്ക'
+    }
+  },
+  {
+    keys: ['watermelon', 'puchakaya', 'tarbooj'],
+    translations: {
+      en: 'Watermelon',
+      te: 'పుచ్చకాయ',
+      hi: 'तरबूज',
+      ta: 'தர்பூசணி',
+      kn: 'ಕಲ್ಲಂಗಡಿ',
+      ml: 'തണ്ണിമത്തൻ'
+    }
+  },
+  {
+    keys: ['coconut', 'kobbari', 'nariyal', 'thengai'],
+    translations: {
+      en: 'Coconut',
+      te: 'కొబ్బరికాయ',
+      hi: 'नारियल',
+      ta: 'தேங்காய்',
+      kn: 'ತೆಂಗಿನಕಾಯಿ',
+      ml: 'തേങ്ങ',
+      bn: 'নারকেল'
+    }
+  },
+  {
+    keys: ['lemon', 'nimmakaya', 'nimbu', 'elamichai'],
+    translations: {
+      en: 'Lemon',
+      te: 'నిమ్మకాయ',
+      hi: 'नींबू',
+      ta: 'எலுமிச்சை',
+      kn: 'ನಿಂಬೆಹಣ್ಣು',
+      ml: 'നാരങ്ങ'
+    }
+  },
+  {
+    keys: ['onion', 'onions', 'ullipaya', 'pyaz', 'vengayam'],
+    translations: {
+      en: 'Onion',
+      te: 'ఉల్లిపాయ',
+      hi: 'प्याज',
+      ta: 'வெங்காயம்',
+      kn: 'ಈರುಳ್ಳಿ',
+      ml: 'സവാള / ഉള്ളി',
+      bn: 'পেঁয়াজ'
+    }
+  },
+  {
+    keys: ['garlic', 'vellulli', 'lahsun', 'poondu'],
+    translations: {
+      en: 'Garlic',
+      te: 'వెల్లుల్లి',
+      hi: 'लहसुन',
+      ta: 'பூண்டு',
+      kn: 'ಬೆಳ್ಳುಳ್ಳಿ',
+      ml: 'വെളുത്തുള്ളി',
+      bn: 'রসুন'
+    }
+  },
+  {
+    keys: ['ginger', 'allam', 'adrak', 'inji'],
+    translations: {
+      en: 'Ginger',
+      te: 'అల్లం',
+      hi: 'अदरक',
+      ta: 'இஞ்சி',
+      kn: 'ಶುಂಠಿ',
+      ml: 'ഇഞ്ചി',
+      bn: 'আদা'
+    }
+  },
+  {
+    keys: ['tomato', 'tomatoes', 'tamata', 'tamatar', 'thakkali'],
+    translations: {
+      en: 'Tomato',
+      te: 'టమోటా',
+      hi: 'टमाटर',
+      ta: 'தக்காளி',
+      kn: 'ಟೊಮೆಟೊ',
+      ml: 'തക്കാളി'
+    }
+  },
+
+  // --- ANIMALS & BIRDS ---
+  {
+    keys: ['dog', 'dogs', 'kukka', 'kutta', 'naai'],
+    translations: {
+      en: 'Dog',
+      te: 'కుక్క',
+      hi: 'कुत्ता',
+      ta: 'நாய்',
+      kn: 'ನಾಯಿ',
+      ml: 'പട്ടി / നായ',
+      bn: 'কুকুর'
+    }
+  },
+  {
+    keys: ['cat', 'cats', 'pilli', 'billi', 'poonai'],
+    translations: {
+      en: 'Cat',
+      te: 'పిల్లి',
+      hi: 'बिल्ली',
+      ta: 'பூனை',
+      kn: 'ಬೆಕ್ಕು',
+      ml: 'പൂച്ച',
+      bn: 'বিড়াল'
+    }
+  },
+  {
+    keys: ['cow', 'cows', 'aavu', 'gaay', 'pasu'],
+    translations: {
+      en: 'Cow',
+      te: 'ఆవు',
+      hi: 'गाय',
+      ta: 'பசு',
+      kn: 'ಹಸು',
+      ml: 'പശു',
+      bn: 'গরু'
+    }
+  },
+  {
+    keys: ['elephant', 'elephants', 'enugu', 'haathi', 'yaanai'],
+    translations: {
+      en: 'Elephant',
+      te: 'ఏనుగు',
+      hi: 'हाथी',
+      ta: 'யானை',
+      kn: 'ಆನೆ',
+      ml: 'ആന',
+      bn: 'হাতি'
+    }
+  },
+  {
+    keys: ['tiger', 'tigers', 'puli', 'baagh'],
+    translations: {
+      en: 'Tiger',
+      te: 'పులి',
+      hi: 'बाघ',
+      ta: 'புலி',
+      kn: 'ಹುಲಿ',
+      ml: 'കടുവ',
+      bn: 'বাঘ'
+    }
+  },
+  {
+    keys: ['lion', 'lions', 'simham', 'sher'],
+    translations: {
+      en: 'Lion',
+      te: 'సింహం',
+      hi: 'शेर / सिंह',
+      ta: 'சிங்கம்',
+      kn: 'ಸಿಂಹ',
+      ml: 'സിംഹം',
+      bn: 'সিংহ'
+    }
+  },
+  {
+    keys: ['horse', 'horses', 'gurram', 'ghoda', 'kuthirai'],
+    translations: {
+      en: 'Horse',
+      te: 'గుర్రం',
+      hi: 'घोड़ा',
+      ta: 'குதிரை',
+      kn: 'ಕುದುರೆ',
+      ml: 'കുതിര',
+      bn: 'ঘোড়া'
+    }
+  },
+  {
+    keys: ['fish', 'fishes', 'chepa', 'chepalu', 'machli', 'meen'],
+    translations: {
+      en: 'Fish',
+      te: 'చేప',
+      hi: 'मछली',
+      ta: 'மீன்',
+      kn: 'ಮೀನು',
+      ml: 'മീൻ',
+      bn: 'মাছ'
+    }
+  },
+  {
+    keys: ['bird', 'birds', 'pakshi', 'chidiya', 'paravai'],
+    translations: {
+      en: 'Bird',
+      te: 'పక్షి',
+      hi: 'पक्षी / चिड़िया',
+      ta: 'பறவை',
+      kn: 'ಪಕ್ಷಿ',
+      ml: 'പക്ഷി',
+      bn: 'পাখি'
+    }
+  },
+  {
+    keys: ['peacock', 'nemali', 'mor', 'mayil'],
+    translations: {
+      en: 'Peacock',
+      te: 'నెమలి',
+      hi: 'मोर',
+      ta: 'மயில்',
+      kn: 'ನವಿಲು',
+      ml: 'മയിൽ'
+    }
+  },
+
+  // --- FAMILY & DAILY NOUNS ---
+  {
+    keys: ['mother', 'mom', 'amma', 'thaayi', 'maa', 'mataji'],
+    translations: {
+      en: 'Mother',
+      te: 'తల్లి (అమ్మ)',
+      hi: 'माँ (माताजी)',
+      ta: 'தாய் (அம்மா)',
+      kn: 'ತಾಯಿ (ಅಮ್ಮ)',
+      ml: 'അമ്മ',
+      bn: 'মা'
+    }
+  },
+  {
+    keys: ['father', 'dad', 'nanna', 'thandrhi', 'pita', 'pitaji', 'appa'],
+    translations: {
+      en: 'Father',
+      te: 'తండ్రి (నాన్న)',
+      hi: 'पिता (पिताजी)',
+      ta: 'தந்தை (அப்பா)',
+      kn: 'ತಂದೆ (ಅಪ್ಪ)',
+      ml: 'അച്ഛൻ',
+      bn: 'বাবা'
+    }
+  },
+  {
+    keys: ['brother', 'bhai', 'annayya', 'thammudu', 'sahodaran'],
+    translations: {
+      en: 'Brother',
+      te: 'సోదరుడు (అన్నయ్య / తమ్ముడు)',
+      hi: 'भाई',
+      ta: 'சகோதரன் (அண்ணன் / தம்பி)',
+      kn: 'ಸಹೋದರ (ಅಣ್ಣ / ತಮ್ಮ)',
+      ml: 'സഹോദരൻ'
+    }
+  },
+  {
+    keys: ['sister', 'behen', 'chelelu', 'akka', 'sahodari'],
+    translations: {
+      en: 'Sister',
+      te: 'సోదరి (అక్క / చెల్లెలు)',
+      hi: 'बहन',
+      ta: 'சகோதரி (அக்கா / தங்கை)',
+      kn: 'ಸಹೋದರಿ (ಅಕ್ಕ / ತಂಗಿ)',
+      ml: 'സഹോദരി'
+    }
+  },
+  {
+    keys: ['friend', 'friends', 'dost', 'mitr', 'snehithudu', 'nanban'],
+    translations: {
+      en: 'Friend',
+      te: 'స్నేహితుడు (మిత్రుడు)',
+      hi: 'दोस्त (मित्र)',
+      ta: 'நண்பன்',
+      kn: 'ಸ್ನೇಹಿತ',
+      ml: 'സുഹൃത്ത്',
+      bn: 'বন্ধু'
+    }
+  },
+  {
+    keys: ['house', 'home', 'illu', 'ghar', 'veedu', 'mane'],
+    translations: {
+      en: 'House / Home',
+      te: 'ఇల్లు',
+      hi: 'घर',
+      ta: 'வீடு',
+      kn: 'ಮನೆ',
+      ml: 'വീട്',
+      bn: 'বাড়ি'
+    }
+  },
+  {
+    keys: ['hospital', 'aasupathri', 'aspatal', 'maruthuvamanai'],
+    translations: {
+      en: 'Hospital',
+      te: 'ఆసుపత్రి',
+      hi: 'अस्पताल',
+      ta: 'மருத்துவமனை',
+      kn: 'ಆಸ್ಪತ್ರೆ',
+      ml: 'ആശുപത്രി'
+    }
+  },
+  {
+    keys: ['school', 'paatashala', 'vidyalay', 'palli'],
+    translations: {
+      en: 'School',
+      te: 'పాఠశాల (బడి)',
+      hi: 'विद्यालय (स्कूल)',
+      ta: 'பள்ளி',
+      kn: 'ಶಾಲೆ',
+      ml: 'സ്കൂൾ'
+    }
+  },
+  {
+    keys: ['book', 'books', 'pustakam', 'kitab'],
+    translations: {
+      en: 'Book',
+      te: 'పుస్తకం',
+      hi: 'किताब (पुस्तक)',
+      ta: 'புத்தகம்',
+      kn: 'ಪುಸ್ತಕ',
+      ml: 'പുസ്തകം'
+    }
+  },
+  {
+    keys: ['money', 'dabbu', 'dabbulu', 'paise', 'panam', 'hana'],
+    translations: {
+      en: 'Money',
+      te: 'డబ్బులు',
+      hi: 'पैसे (धन)',
+      ta: 'பணம்',
+      kn: 'ಹಣ',
+      ml: 'പണം'
+    }
+  },
+  {
+    keys: ['doctor', 'vaidyudu', 'chikitsak'],
+    translations: {
+      en: 'Doctor',
+      te: 'వైద్యుడు (డాక్టర్)',
+      hi: 'चिकित्सक (डॉक्टर)',
+      ta: 'மருத்துவர் (டாக்டர்)',
+      kn: 'ವೈದ್ಯ (ಡಾಕ್ಟರ್)',
+      ml: 'ഡോക്ടർ'
+    }
   }
 ];
+
+export const VOCABULARY_DICTIONARY = FOOD_MENU_DICTIONARY;
+export const lookupVocabulary = lookupFoodTranslation;
 
 /**
  * Fast Lookup of a clean word or phrase in the Indian Food & Menu Dictionary
