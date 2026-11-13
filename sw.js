@@ -4,7 +4,7 @@
  * with graceful offline cache fallback for flights/travel without internet.
  */
 
-const CACHE_NAME = 'bharat-translator-v2.4.0';
+const CACHE_NAME = 'bharat-translator-v2.4.1';
 
 const STATIC_ASSETS = [
   './',
