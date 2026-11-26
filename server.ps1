@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Bharat Translator - Native Windows PowerShell Web & API Proxy Server
 .DESCRIPTION
@@ -103,6 +103,53 @@ function Invoke-FreeTranslate($text, $sourceLang, $targetLang) {
         }
     } catch {
         Write-Warning "Free translate failed: $_"
+    }
+    return $null
+}
+
+# Google Gemini AI Translation
+function Invoke-GeminiTranslate($text, $sourceLang, $targetLang, $apiKey) {
+    $models = @("gemini-flash-latest", "gemini-3.5-flash")
+    $prompt = "You are a professional multilingual translator specialized in Indian languages. Translate the following text from $sourceLang to $targetLang. Output ONLY the translated text in its authentic native script without explanations, notes, preamble, or markdown quotes:`n`n$text"
+
+    foreach ($model in $models) {
+        try {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=$apiKey"
+            $payload = @{
+                contents = @(
+                    @{ parts = @(@{ text = $prompt }) }
+                )
+                generationConfig = @{
+                    temperature = 0.1
+                    maxOutputTokens = 250
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $req = [System.Net.HttpWebRequest]::Create($url)
+            $req.Method = "POST"
+            $req.ContentType = "application/json; charset=utf-8"
+            $req.Timeout = 8000
+            $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
+            $req.ContentLength = $bodyBytes.Length
+            $st = $req.GetRequestStream()
+            $st.Write($bodyBytes, 0, $bodyBytes.Length)
+            $st.Close()
+
+            $resp = $req.GetResponse()
+            $reader = New-Object System.IO.StreamReader($resp.GetResponseStream(), [System.Text.Encoding]::UTF8)
+            $resJson = $reader.ReadToEnd() | ConvertFrom-Json
+            $reader.Close()
+            $resp.Close()
+
+            if ($resJson.candidates -and $resJson.candidates[0].content.parts[0].text) {
+                $outText = $resJson.candidates[0].content.parts[0].text.Trim()
+                if ($outText) {
+                    return @{ translatedText = $outText; provider = "google-gemini-ai" }
+                }
+            }
+        } catch {
+            Write-Warning "Gemini ($model) attempt failed: $_"
+        }
     }
     return $null
 }
@@ -245,12 +292,17 @@ try {
                 if ($sourceLang -eq $targetLang) {
                     $result = @{ translatedText = $nativeSource; sourceTransliterated = $nativeSource; provider = "phonetic-transliteration" }
                 } else {
-                    # 1. Google Translate API if key provided
-                    if ($envVars.ContainsKey("GOOGLE_TRANSLATE_API_KEY") -and $envVars["GOOGLE_TRANSLATE_API_KEY"]) {
+                    # 1. Google Gemini AI API (Primary Engine)
+                    if ($envVars.ContainsKey("GEMINI_API_KEY") -and $envVars["GEMINI_API_KEY"]) {
+                        $result = Invoke-GeminiTranslate $queryText $sourceLang $targetLang $envVars["GEMINI_API_KEY"]
+                    }
+
+                    # 2. Google Cloud Translate API if key provided
+                    if (-not $result -and $envVars.ContainsKey("GOOGLE_TRANSLATE_API_KEY") -and $envVars["GOOGLE_TRANSLATE_API_KEY"]) {
                         $result = Invoke-GoogleTranslate $queryText $sourceLang $targetLang $envVars["GOOGLE_TRANSLATE_API_KEY"]
                     }
 
-                    # 2. Free Cloud Fallback (GTX)
+                    # 3. High-Speed Free Cloud Fallback (GTX)
                     if (-not $result) {
                         $result = Invoke-FreeTranslate $queryText $sourceLang $targetLang
                     }

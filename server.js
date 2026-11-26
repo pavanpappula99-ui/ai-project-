@@ -1,7 +1,7 @@
 /**
  * Bharat Translator - Node.js Backend Proxy Server
  * Zero-dependency pure Node.js HTTP server.
- * Proxies translation requests to keep API keys secure.
+ * Uses Google Gemini AI as the primary translation engine with seamless cloud fallbacks.
  */
 
 import http from 'http';
@@ -42,113 +42,76 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=UTF-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json'
 };
 
-// Translation Handlers
-async function translateWithBhashini(text, sourceLang, targetLang) {
-  if (!env.BHASHINI_API_KEY || !env.BHASHINI_USER_ID) return null;
-
-  const url = 'https://dhruva-api.bhashini.gov.in/services/inference/pipeline';
-  const payload = {
-    pipelineTasks: [
-      {
-        taskType: 'translation',
-        config: {
-          language: {
-            sourceLanguage: sourceLang,
-            targetLanguage: targetLang
-          }
-        }
-      }
-    ],
-    inputData: {
-      input: [{ source: text }]
-    }
-  };
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: env.BHASHINI_API_KEY,
-      userID: env.BHASHINI_USER_ID
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) throw new Error(`Bhashini API error: ${res.statusText}`);
-  const data = await res.json();
-  const output = data.pipelineResponse?.[0]?.output?.[0]?.target;
-  return output || null;
-}
-
-async function translateWithGoogleCloud(text, sourceLang, targetLang) {
-  if (!env.GOOGLE_TRANSLATE_API_KEY) return null;
-
-  const url = `https://translation.googleapis.com/language/translate/v2?key=${env.GOOGLE_TRANSLATE_API_KEY}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      q: text,
-      source: sourceLang,
-      target: targetLang,
-      format: 'text'
-    })
-  });
-
-  if (!res.ok) throw new Error(`Google Translate API error: ${res.statusText}`);
-  const data = await res.json();
-  return data.data?.translations?.[0]?.translatedText || null;
-}
-
-async function translateWithAzure(text, sourceLang, targetLang) {
-  if (!env.AZURE_TRANSLATOR_KEY) return null;
-
-  const region = env.AZURE_TRANSLATOR_REGION || 'centralindia';
-  const url = `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=${sourceLang}&to=${targetLang}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Ocp-Apim-Subscription-Key': env.AZURE_TRANSLATOR_KEY,
-      'Ocp-Apim-Subscription-Region': region,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify([{ text }])
-  });
-
-  if (!res.ok) throw new Error(`Azure Translator error: ${res.statusText}`);
-  const data = await res.json();
-  return data[0]?.translations?.[0]?.text || null;
-}
-
+/**
+ * Primary Translation: Google Gemini AI
+ * Translates semantic meaning accurately across all Indian regional languages.
+ */
 async function translateWithGemini(text, sourceLang, targetLang) {
   if (!env.GEMINI_API_KEY) return null;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-  const prompt = `Translate the following text strictly from ${sourceLang} to ${targetLang}. Output ONLY the translated text in its native script without commentary or quotes:\n\n${text}`;
+  const models = ['gemini-flash-latest', 'gemini-3.5-flash'];
+  const prompt = `You are a professional multilingual translator specialized in Indian languages. Translate the following text from ${sourceLang} to ${targetLang}. Output ONLY the translated text in its authentic native script without explanations, notes, preamble, or markdown quotes:\n\n${text}`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
-  });
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 250
+        }
+      };
 
-  if (!res.ok) throw new Error(`Gemini API error: ${res.statusText}`);
-  const data = await res.json();
-  const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  return candidate ? candidate.trim() : null;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        console.warn(`Gemini (${model}) returned HTTP ${res.status}`);
+        continue;
+      }
+
+      const data = await res.json();
+      const output = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (output && output.trim()) {
+        return output.trim();
+      }
+    } catch (e) {
+      console.warn(`Gemini (${model}) request failed:`, e.message);
+    }
+  }
+
+  return null;
 }
 
+/**
+ * Secondary Fallback: Direct Google Cloud Free Gateway
+ */
 async function translateWithFreeFallback(text, sourceLang, targetLang) {
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const mapLang = (l) => {
+      if (l === 'mni') return 'mni-Mtei';
+      if (l === 'brx') return 'hi';
+      if (l === 'ks') return 'ur';
+      return l;
+    };
+    const sl = mapLang(sourceLang);
+    const tl = mapLang(targetLang);
+
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
     const res = await fetch(url);
     if (!res.ok) return null;
+
     const data = await res.json();
     if (data && data[0] && Array.isArray(data[0])) {
       let full = '';
@@ -158,7 +121,7 @@ async function translateWithFreeFallback(text, sourceLang, targetLang) {
       return full.trim() || null;
     }
   } catch (e) {
-    console.warn('GTX fallback error:', e.message);
+    console.warn('Google Free Gateway fallback error:', e.message);
   }
   return null;
 }
@@ -193,76 +156,46 @@ const server = http.createServer(async (req, res) => {
         let translatedText = null;
         let provider = 'none';
 
-        // 1. Try Bhashini if configured
-        if (env.BHASHINI_API_KEY) {
-          try {
-            translatedText = await translateWithBhashini(text, sourceLang, targetLang);
-            if (translatedText) provider = 'bhashini';
-          } catch (e) {
-            console.warn('Bhashini failed, falling back:', e.message);
-          }
-        }
-
-        // 2. Try Google Cloud Translation
-        if (!translatedText && env.GOOGLE_TRANSLATE_API_KEY) {
-          try {
-            translatedText = await translateWithGoogleCloud(text, sourceLang, targetLang);
-            if (translatedText) provider = 'google-cloud';
-          } catch (e) {
-            console.warn('Google Cloud failed, falling back:', e.message);
-          }
-        }
-
-        // 3. Try Azure Translator
-        if (!translatedText && env.AZURE_TRANSLATOR_KEY) {
-          try {
-            translatedText = await translateWithAzure(text, sourceLang, targetLang);
-            if (translatedText) provider = 'azure';
-          } catch (e) {
-            console.warn('Azure failed, falling back:', e.message);
-          }
-        }
-
-        // 4. Try Gemini
-        if (!translatedText && env.GEMINI_API_KEY) {
+        // 1. Primary: Google Gemini AI
+        if (env.GEMINI_API_KEY) {
           try {
             translatedText = await translateWithGemini(text, sourceLang, targetLang);
-            if (translatedText) provider = 'gemini';
+            if (translatedText) provider = 'google-gemini-ai';
           } catch (e) {
-            console.warn('Gemini failed, falling back:', e.message);
+            console.warn('Gemini translation error, switching to fallback:', e.message);
           }
         }
 
-        // 5. Fallback Free Provider
+        // 2. High-speed Fallback: Google Free Cloud Gateway
         if (!translatedText) {
-          try {
-            translatedText = await translateWithFreeFallback(text, sourceLang, targetLang);
-            if (translatedText) provider = 'cloud-free';
-          } catch (e) {
-            console.warn('Free fallback failed:', e.message);
-          }
+          translatedText = await translateWithFreeFallback(text, sourceLang, targetLang);
+          if (translatedText) provider = 'google-cloud-gateway';
         }
 
         if (translatedText) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ translatedText, provider }));
+          res.end(
+            JSON.stringify({
+              translatedText,
+              provider,
+              sourceLang,
+              targetLang
+            })
+          );
         } else {
           res.writeHead(502, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'All translation providers failed' }));
         }
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: 'Internal server error: ' + err.message }));
       }
     });
     return;
   }
 
   // Static File Serving
-  let reqPath = req.url.split('?')[0];
-  if (reqPath === '/' || reqPath === '') reqPath = '/index.html';
-
-  const filePath = path.join(__dirname, reqPath);
+  let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
@@ -277,15 +210,15 @@ const server = http.createServer(async (req, res) => {
       }
     } else {
       res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
+      res.end(content);
     }
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`🇮🇳 Bharat Translator Server running!`);
-  console.log(`📍 Local URL: http://localhost:${PORT}`);
-  console.log(`🔒 API Keys loaded from .env`);
-  console.log(`===============================================`);
+  console.log('========================================================');
+  console.log(`🇮🇳 Bharat Translator Server Running on http://localhost:${PORT}`);
+  console.log(`-> Primary Engine: ${env.GEMINI_API_KEY ? 'Google Gemini AI (Active)' : 'Zero-Config Cloud Gateway'}`);
+  console.log('-> Fallback Engine: Google Cloud Free Gateway (Active)');
+  console.log('========================================================');
 });

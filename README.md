@@ -130,27 +130,13 @@ The app uses a 3-tier cascade:
 ```ini
 PORT=3000
 
-# 1. Govt. of India Bhashini ULCA API (Specialized for Indian Languages)
-BHASHINI_API_KEY=your_bhashini_api_key_here
-BHASHINI_USER_ID=your_bhashini_user_id_here
-BHASHINI_PIPELINE_ID=your_pipeline_id_here
-
-# 2. Google Cloud Translation API
-GOOGLE_TRANSLATE_API_KEY=your_google_cloud_api_key_here
-
-# 3. Azure Cognitive Services Translator
-AZURE_TRANSLATOR_KEY=your_azure_translator_key_here
-AZURE_TRANSLATOR_REGION=centralindia
-
-# 4. Google Gemini API (High contextual fluency)
+# Google Gemini API (Primary Translation Engine)
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### How to obtain API keys:
-- **Govt. of India Bhashini**: Register at [Bhashini ULCA Portal](https://bhashini.gov.in/en/).
-- **Google Cloud Translation**: Go to [Google Cloud Console](https://console.cloud.google.com/) $\to$ Enable Cloud Translation API $\to$ Credentials $\to$ Create API Key.
-- **Azure Translator**: Go to [Azure Portal](https://portal.azure.com/) $\to$ Create "Translator" cognitive service $\to$ Keys and Endpoint.
-- **Google Gemini API**: Generate a free Gemini key at [Google AI Studio](https://aistudio.google.com/).
+### How to obtain a Google Gemini API key:
+- Generate a free Gemini key at [Google AI Studio](https://aistudio.google.com/).
+- Once configured, Bharat Translator automatically utilizes Google Gemini AI as its primary neural translation engine with high-speed cloud fallbacks.
 
 ---
 

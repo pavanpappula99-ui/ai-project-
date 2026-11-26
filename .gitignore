@@ -1,4 +1,5 @@
 # .gitignore for Bharat Translator
+.env
 cloudflared.exe
 PortableGit.exe
 PortableGit/
