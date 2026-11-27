@@ -141,11 +141,9 @@ export default async function requestHandler(req, res) {
 
   // API Proxy Route: POST /api/translate
   if (req.method === 'POST' && (req.url === '/api/translate' || req.url.startsWith('/api/translate?'))) {
-    let body = '';
-    req.on('data', (chunk) => (body += chunk));
-    req.on('end', async () => {
+    const processTranslation = async (payload) => {
       try {
-        const { text, sourceLang, targetLang } = JSON.parse(body || '{}');
+        const { text, sourceLang, targetLang } = payload || {};
 
         if (!text || !sourceLang || !targetLang) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -189,6 +187,24 @@ export default async function requestHandler(req, res) {
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Internal server error: ' + err.message }));
+      }
+    };
+
+    // If body was already parsed by serverless runtime (e.g. Vercel)
+    if (req.body) {
+      const parsed = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      await processTranslation(parsed);
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk) => (body += chunk));
+    req.on('end', async () => {
+      try {
+        await processTranslation(JSON.parse(body || '{}'));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON payload: ' + err.message }));
       }
     });
     return;
