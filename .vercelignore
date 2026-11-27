@@ -10,3 +10,5 @@ cloudflared.exe
 .vercel
 *.cjs
 *.zip
+server.js
+server.ps1
