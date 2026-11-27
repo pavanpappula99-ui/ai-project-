@@ -126,8 +126,8 @@ async function translateWithFreeFallback(text, sourceLang, targetLang) {
   return null;
 }
 
-// HTTP Server
-const server = http.createServer(async (req, res) => {
+// Main Request Handler
+export default async function requestHandler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -140,7 +140,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API Proxy Route: POST /api/translate
-  if (req.method === 'POST' && req.url === '/api/translate') {
+  if (req.method === 'POST' && (req.url === '/api/translate' || req.url.startsWith('/api/translate?'))) {
     let body = '';
     req.on('data', (chunk) => (body += chunk));
     req.on('end', async () => {
@@ -217,12 +217,16 @@ const server = http.createServer(async (req, res) => {
       res.end(content);
     }
   });
-});
+}
 
-server.listen(PORT, () => {
-  console.log('========================================================');
-  console.log(`🇮🇳 Bharat Translator Server Running on http://localhost:${PORT}`);
-  console.log(`-> Primary Engine: ${env.GEMINI_API_KEY ? 'Google Gemini AI (Active)' : 'Zero-Config Cloud Gateway'}`);
-  console.log('-> Fallback Engine: Google Cloud Free Gateway (Active)');
-  console.log('========================================================');
-});
+// Only listen on PORT when running server.js directly (local development)
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
+  const server = http.createServer(requestHandler);
+  server.listen(PORT, () => {
+    console.log('========================================================');
+    console.log(`🇮🇳 Bharat Translator Server Running on http://localhost:${PORT}`);
+    console.log(`-> Primary Engine: ${env.GEMINI_API_KEY ? 'Google Gemini AI (Active)' : 'Zero-Config Cloud Gateway'}`);
+    console.log('-> Fallback Engine: Google Cloud Free Gateway (Active)');
+    console.log('========================================================');
+  });
+}

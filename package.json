@@ -2,6 +2,7 @@
   "name": "bharat-translator",
   "version": "1.0.0",
   "description": "Real-time two-way speech and text translator for all 22 scheduled Indian languages plus English",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "build": "echo 'Build complete'",
