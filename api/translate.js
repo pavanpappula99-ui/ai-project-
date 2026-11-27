@@ -9,7 +9,7 @@
 async function translateWithGemini(text, sourceLang, targetLang, apiKey) {
   if (!apiKey) return null;
 
-  const models = ['gemini-flash-latest', 'gemini-3.5-flash'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
   const prompt = `You are a professional multilingual translator specialized in Indian languages. Translate the following text from ${sourceLang} to ${targetLang}. Output ONLY the translated text in its authentic native script without explanations, notes, preamble, or markdown quotes:\n\n${text}`;
 
   for (const model of models) {
@@ -26,7 +26,8 @@ async function translateWithGemini(text, sourceLang, targetLang, apiKey) {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(6000)
       });
 
       if (!res.ok) {
@@ -60,7 +61,7 @@ async function translateWithFreeFallback(text, sourceLang, targetLang) {
     const tl = mapLang(targetLang);
 
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
 
     const data = await res.json();
@@ -92,9 +93,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  // Parse body (supports already parsed JSON or string payload)
+  // Parse body (supports already parsed JSON or stream payload)
   let body = req.body;
-  if (typeof body === 'string') {
+  if (!body || (typeof body === 'object' && Object.keys(body).length === 0)) {
+    try {
+      const buffers = [];
+      for await (const chunk of req) {
+        buffers.push(chunk);
+      }
+      const raw = Buffer.concat(buffers).toString('utf8');
+      if (raw) body = JSON.parse(raw);
+    } catch (e) {}
+  } else if (typeof body === 'string') {
     try {
       body = JSON.parse(body);
     } catch (e) {
