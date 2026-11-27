@@ -1,0 +1,12 @@
+# .vercelignore
+.git
+.github
+node_modules
+PortableGit/
+PortableGit.exe
+cloudflared.exe
+*.log
+.env*
+.vercel
+*.cjs
+*.zip
