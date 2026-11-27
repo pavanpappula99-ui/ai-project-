@@ -1,5 +1,7 @@
 # .gitignore for Bharat Translator
 .env
+node_modules/
+.vercel
 cloudflared.exe
 PortableGit.exe
 PortableGit/

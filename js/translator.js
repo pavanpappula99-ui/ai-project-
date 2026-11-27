@@ -238,29 +238,7 @@ class TranslationEngine {
       };
     }
 
-    // Step 5: Tier 1 - Direct Google Web GTX Translation
-    try {
-      const gtxResult = await this.translateViaGoogleWeb(queryText, effectiveSource, targetLang);
-      if (
-        gtxResult &&
-        gtxResult.trim() &&
-        !this.isIdentical(queryText, gtxResult, effectiveSource, targetLang)
-      ) {
-        const polished = fixKnownTranslationFlaws(gtxResult, targetLang);
-        this.cache.set(cacheKey, polished);
-        return {
-          translatedText: polished,
-          sourceTransliterated,
-          provider: 'cloud-gtx',
-          isOffline: false,
-          toString() { return this.translatedText; }
-        };
-      }
-    } catch (gtxErr) {
-      console.warn('Direct Google Web translation unavailable:', gtxErr.message);
-    }
-
-    // Step 6: Tier 2 - Backend API Proxy (/api/translate for Bhashini, Azure, Cloud Key, Gemini)
+    // Step 5: Tier 1 - Backend Serverless API (/api/translate with Google Gemini AI)
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
@@ -284,14 +262,36 @@ class TranslationEngine {
           return {
             translatedText: polished,
             sourceTransliterated,
-            provider: data.provider || 'backend-api',
+            provider: data.provider || 'gemini-serverless',
             isOffline: false,
             toString() { return this.translatedText; }
           };
         }
       }
     } catch (backendErr) {
-      console.warn('Backend proxy unavailable, trying fallback:', backendErr.message);
+      // Backend serverless endpoint unavailable (e.g. static GitHub Pages hosting)
+    }
+
+    // Step 6: Tier 2 - Direct Google Web Gateway Translation (Zero-Config Fallback)
+    try {
+      const gtxResult = await this.translateViaGoogleWeb(queryText, effectiveSource, targetLang);
+      if (
+        gtxResult &&
+        gtxResult.trim() &&
+        !this.isIdentical(queryText, gtxResult, effectiveSource, targetLang)
+      ) {
+        const polished = fixKnownTranslationFlaws(gtxResult, targetLang);
+        this.cache.set(cacheKey, polished);
+        return {
+          translatedText: polished,
+          sourceTransliterated,
+          provider: 'cloud-gtx',
+          isOffline: false,
+          toString() { return this.translatedText; }
+        };
+      }
+    } catch (gtxErr) {
+      console.warn('Direct Google Web translation unavailable:', gtxErr.message);
     }
 
     // Step 7: Tier 3 - MyMemory Public API
