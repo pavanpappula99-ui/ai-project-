@@ -210,6 +210,43 @@ export default async function requestHandler(req, res) {
     return;
   }
 
+  // TTS Proxy Route: GET /api/tts?tl=...&q=...
+  if (req.method === 'GET' && req.url.startsWith('/api/tts')) {
+    try {
+      const urlObj = new URL(req.url, 'http://localhost');
+      const tl = urlObj.searchParams.get('tl');
+      const q = urlObj.searchParams.get('q');
+      if (!tl || !q) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing tl or q parameter' }));
+        return;
+      }
+      const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(
+        tl
+      )}&q=${encodeURIComponent(q)}`;
+      const response = await fetch(googleTTSUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Referer: 'https://translate.google.com/'
+        }
+      });
+      if (!response.ok) {
+        res.writeHead(response.status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'TTS upstream error' }));
+        return;
+      }
+      const buf = await response.arrayBuffer();
+      res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=86400' });
+      res.end(Buffer.from(buf));
+      return;
+    } catch (e) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+      return;
+    }
+  }
+
   // Static File Serving
   const cleanUrl = req.url === '/' ? 'index.html' : req.url.split('?')[0].replace(/^\//, '');
   let filePath = path.join(__dirname, 'public', cleanUrl);

@@ -234,9 +234,7 @@ class SpeechEngine {
           msg = 'No speech detected. Please speak closer to the mic, or use the quick slang words below!';
           break;
         case 'network':
-          msg = this.isEdge()
-            ? 'Edge speech service had a network timeout. Click "Open in Chrome" at the top for full voice support, or type slang below!'
-            : 'Cloud speech service unreachable. Click "Open in Chrome" for native speech or type slang directly below!';
+          msg = 'Speech recognition network timeout. Please check your mic connection or type directly below.';
           break;
         case 'audio-capture':
           msg = 'Microphone not detected or in use by another app. Please check your mic connection.';
@@ -352,12 +350,18 @@ class SpeechEngine {
         }
 
         const chunk = chunks[idx++];
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(
-          cloudCode
-        )}&q=${encodeURIComponent(chunk)}`;
+        const url = `/api/tts?tl=${encodeURIComponent(cloudCode)}&q=${encodeURIComponent(chunk)}`;
 
         const audio = new Audio(url);
         this.currentAudio = audio;
+
+        let fallbackTriggered = false;
+        const triggerFallback = () => {
+          if (fallbackTriggered) return;
+          fallbackTriggered = true;
+          this.currentAudio = null;
+          this.speakViaWebSpeech(trimmed, langId, options);
+        };
 
         if (options.rate && typeof audio.playbackRate !== 'undefined') {
           audio.playbackRate = Math.min(2.0, Math.max(0.5, options.rate));
@@ -367,20 +371,16 @@ class SpeechEngine {
           playNextChunk();
         };
 
-        audio.onerror = (e) => {
-          console.warn('Cloud audio stream encountered an error, falling back to Web Speech API', e);
-          this.currentAudio = null;
-          this.speakViaWebSpeech(trimmed, langId, options);
+        audio.onerror = () => {
+          triggerFallback();
         };
 
         if (idx === 1 && options.onStart) {
           options.onStart();
         }
 
-        audio.play().catch((playErr) => {
-          console.warn('HTML5 Audio playback prevented, falling back to Web Speech API', playErr);
-          this.currentAudio = null;
-          this.speakViaWebSpeech(trimmed, langId, options);
+        audio.play().catch(() => {
+          triggerFallback();
         });
       };
 
@@ -414,7 +414,12 @@ class SpeechEngine {
 
     if (options.onStart) utterance.onstart = options.onStart;
     if (options.onEnd) utterance.onend = options.onEnd;
-    if (options.onError) utterance.onerror = (e) => options.onError && options.onError({ message: e.error });
+    if (options.onError) {
+      utterance.onerror = (e) => {
+        if (e.error === 'interrupted' || e.error === 'canceled') return;
+        options.onError && options.onError({ message: e.error });
+      };
+    }
 
     try {
       this.synth.speak(utterance);
